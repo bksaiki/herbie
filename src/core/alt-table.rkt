@@ -25,16 +25,18 @@
 ;; Public API
 
 (struct alt-table (point->alts alt->points alt->done? context all) #:prefab)
+(struct cost-rec (berr altns) #:prefab)
 
 (define atab-context alt-table-context)
 
 (define in-atab-pcontext (compose in-pcontext atab-context))
 
 (define (make-alt-table context initial-alt repr)
+  (define cost (alt-cost initial-alt))
   (alt-table (make-immutable-hash
                (for/list ([(pt ex) (in-pcontext context)]
                           [err (errors (alt-program initial-alt) context repr)])
-                 (cons pt (point-rec err (alt-cost initial-alt) (list initial-alt)))))
+                 (cons pt (hash cost (cost-rec err (list initial-alt))))))
              (hash initial-alt (for/list ([(pt ex) (in-pcontext context)]) pt))
              (hash initial-alt #f)
              context
@@ -94,59 +96,65 @@
 
 (struct point-rec (berr cost altns) #:prefab)
 
-(define (best-and-tied-at-points atab altn errs)
+(define (best-and-tied-at-points atab altn cost errs)
   (define point->alt (alt-table-point->alts atab))
   (reap [best! tied!]
     (for ([(pnt ex) (in-pcontext (alt-table-context atab))] [err errs])
-      (match-define (point-rec table-err _ _) (hash-ref point->alt pnt))
-      (cond 
-       [(< err table-err)
-        (best! pnt)]
-       [(= err table-err)
-        (tied! pnt)]
-       [else (void)]))))
+      (define cost-hash (hash-ref point->alt pnt))
+      (define rec (hash-ref cost-hash cost #f))
+      (if rec
+          (let ([table-err (cost-rec-berr rec)])
+            (cond
+             [(< err table-err)
+              (best! pnt)]
+             [(= err table-err)
+              (tied! pnt)]
+             [else (void)]))
+          (best! pnt)))))
 
 (define (remove-chnged-pnts point->alts alt->points chnged-pnts)
   (define chnged-entries (map (curry hash-ref point->alts) chnged-pnts))
-  (define chnged-altns (remove-duplicates (append-map point-rec-altns chnged-entries)))
-
+  (define chnged-altns (mutable-set))
+  (for* ([cost-hash chnged-entries]
+         [rec (hash-values cost-hash)]
+         [alt (cost-rec-altns rec)])
+    (set-add! chnged-altns alt))
   (hash-union
    alt->points
-   (for/hash ([altn chnged-altns])
+   (for/hash ([altn (in-set chnged-altns)])
      (values altn (remove* chnged-pnts (hash-ref alt->points altn))))
    #:combine (λ (a b) b)))
 
-(define (override-at-pnts points->alts pnts altn errs)
-  (define pnt->alt-err
+(define (override-at-pnts points->alts pnts altn cost errs)
+  (define pnt->errs
     (for/hash ([(pnt ex) (in-pcontext (*pcontext*))] [err errs])
                         (values pnt err)))
   (hash-union
    points->alts
    (for/hash ([pnt pnts])
-     (values pnt (point-rec (hash-ref pnt->alt-err pnt)
-                            (alt-cost altn)
-                            (list altn))))
-   #:combine (λ (a b) b)))
+     (values pnt (hash cost (cost-rec (hash-ref pnt->errs pnt) (list altn)))))
+   #:combine (λ (a b) (hash-union a b #:combine (λ (x y) y)))))
 
-(define (append-at-pnts points->alts pnts altn)
+(define (append-at-pnts points->alts pnts altn cost)
   (hash-union
    points->alts
    (for/hash ([pnt pnts])
-     (match-define (point-rec berr cost altns) (hash-ref points->alts pnt))
-     (values pnt (point-rec berr (min (alt-cost altn) cost) (cons altn altns))))
+     (define cost-hash (hash-ref points->alts pnt))
+     (match-define (cost-rec berr altns) (hash-ref cost-hash cost))
+     (values pnt (hash-set cost-hash cost (cost-rec berr (cons altn altns)))))
    #:combine (λ (a b) b)))
-
-(define (alt-cost altn)
-  (program-cost (alt-program altn)))
 
 (define (minimize-alts atab)
   (define (get-essential pnts->alts)
-    (remove-duplicates (filter identity
-             (map (λ (pnt-rec) (let ([altns (point-rec-altns pnt-rec)])
-               (cond [(> (length altns) 1) #f]
-               [(= (length altns) 1) (car altns)]
-               [else (error "This point has no alts which are best at it!" pnt-rec)])))
-            (hash-values pnts->alts)))))
+    (define essential (mutable-set))
+    (for* ([cost-hash (hash-values pnts->alts)]
+           [rec (hash-values cost-hash)])
+      (let ([altns (cost-rec-altns rec)])
+        (cond
+         [(> (length altns) 1) (void)]
+         [(= (length altns) 1) (set-add! essential (car altns))]
+         [else (error "This point has no alts which are best at it!" rec)])))
+    (set->list essential))
 
   (define (get-tied-alts essential-alts alts->pnts pnts->alts)
     (remove* essential-alts (hash-keys alts->pnts)))
@@ -163,30 +171,35 @@
 
   (let loop ([cur-atab atab])
     (let* ([alts->pnts (alt-table-alt->points cur-atab)]
-     [pnts->alts (alt-table-point->alts cur-atab)]
-     [essential-alts (get-essential pnts->alts)]
-     [tied-alts (get-tied-alts essential-alts alts->pnts pnts->alts)])
-      (if (null? tied-alts) cur-atab
-    (let ([atab* (rm-alts cur-atab (worst cur-atab tied-alts))])
-      (loop atab*))))))
+           [pnts->alts (alt-table-point->alts cur-atab)]
+           [essential-alts (get-essential pnts->alts)]
+           [tied-alts (get-tied-alts essential-alts alts->pnts pnts->alts)])
+      (if (null? tied-alts)
+          cur-atab
+          (loop (rm-alts cur-atab (worst cur-atab tied-alts)))))))
 
 (define (rm-alts atab . altns)
   (match-define (alt-table point->alts alt->points alt->done? _ _) atab)
+  (define table (make-hash))
   (define rel-points
     (remove-duplicates
      (apply append (map (curry hash-ref (alt-table-alt->points atab)) altns))))
 
+  (for ([altn altns])
+    (let ([cost (alt-cost altn)])
+      (hash-update! table cost (λ (x) (cons altn x)) (list altn))))
+
   (define pnts->alts*
     (hash-union
-     point->alts
-     (for/hash ([pnt rel-points])
-       (define old-val (hash-ref point->alts pnt))
-       (values pnt (struct-copy point-rec old-val
-                                [altns (remove* altns (point-rec-altns old-val))])))
-     #:combine (λ (a b) b)))
+      point->alts
+      (for/hash ([pnt rel-points])
+        (define cost-hash
+          (for/hash ([(cost rec) (in-hash (hash-ref point->alts pnt))])
+            (values cost (struct-copy cost-rec rec
+                                      [altns (remove* altns (cost-rec-altns rec))]))))
+        (values pnt cost-hash))
+      #:combine (λ (a b) b)))
 
-   ;[alts->pnts* (hash-remove* alt->points altns)]
-   ;[alts->done?* (hash-remove* alt->done altns)])
   (struct-copy alt-table atab
                [point->alts pnts->alts*]
                [alt->points (hash-remove* alt->points altns)]
@@ -201,17 +214,16 @@
 (define (atab-add-altn atab altn errs repr)
   (define cost (alt-cost altn))
   (match-define (alt-table point->alts alt->points _ _ all-alts) atab)
-  (define-values (best-pnts tied-pnts) (best-and-tied-at-points atab altn errs))
+  (define-values (best-pnts tied-pnts) (best-and-tied-at-points atab altn cost errs))
   (cond
    [(and (null? best-pnts)
-         (for/and ([pnt (in-list tied-pnts)])
-           (>= cost (point-rec-cost (hash-ref point->alts pnt)))))
+         (ormap (curry equal? altn) (hash-keys alt->points)))
     atab]
    [else
     (define alts->pnts*1 (remove-chnged-pnts point->alts alt->points best-pnts))
     (define alts->pnts*2 (hash-set alts->pnts*1 altn (append best-pnts tied-pnts)))
-    (define pnts->alts*1 (override-at-pnts point->alts best-pnts altn errs))
-    (define pnts->alts*2 (append-at-pnts pnts->alts*1 tied-pnts altn))
+    (define pnts->alts*1 (override-at-pnts point->alts best-pnts altn cost errs))
+    (define pnts->alts*2 (append-at-pnts pnts->alts*1 tied-pnts altn cost))
     (define alts->done?* (hash-set (alt-table-alt->done? atab) altn #f))
     (set-add! all-alts altn)
     (minimize-alts (alt-table pnts->alts*2 alts->pnts*2 alts->done?*
@@ -222,8 +234,13 @@
     (hash-keys (alt-table-alt->points atab))))
 
 (define (atab-min-errors atab)
+  (define pnt->alts (alt-table-point->alts atab))
   (for/list ([(pt ex) (in-pcontext (alt-table-context atab))])
-    (point-rec-berr (hash-ref (alt-table-point->alts atab) pt))))
+    (for/fold ([best #f]) ([rec (hash-values (hash-ref pnt->alts pt))])
+      (let ([err (cost-rec-berr rec)])
+        (cond [(not best) err]
+              [(< err best) err]
+              [(>= err best) best])))))
 
 ;; The completeness invariant states that at any time, for every point there exists some
 ;; alt that is best at it.
