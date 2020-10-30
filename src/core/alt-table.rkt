@@ -112,13 +112,14 @@
              [else (void)]))
           (best! pnt)))))
 
-(define (remove-chnged-pnts point->alts alt->points chnged-pnts)
+(define (remove-chnged-pnts point->alts alt->points chnged-pnts cost)
   (define chnged-entries (map (curry hash-ref point->alts) chnged-pnts))
   (define chnged-altns (mutable-set))
   (for* ([cost-hash chnged-entries]
          [rec (hash-values cost-hash)]
          [alt (cost-rec-altns rec)])
-    (set-add! chnged-altns alt))
+    (when (equal? (alt-cost alt) cost)
+      (set-add! chnged-altns alt)))
   (hash-union
    alt->points
    (for/hash ([altn (in-set chnged-altns)])
@@ -194,7 +195,7 @@
       point->alts
       (for/hash ([pnt rel-points])
         (define cost-hash
-          (for/hash ([(cost rec) (in-hash (hash-ref point->alts pnt))])
+          (for/hash ([(cost rec) (hash-ref point->alts pnt)])
             (values cost (struct-copy cost-rec rec
                                       [altns (remove* altns (cost-rec-altns rec))]))))
         (values pnt cost-hash))
@@ -209,6 +210,7 @@
   (define progs (map alt-program altns))
   (define errss (apply vector-map list (batch-errors progs (alt-table-context atab) repr)))
   (for/fold ([atab atab]) ([altn (in-list altns)] [errs (in-vector errss)])
+    (check-minimality-invariant atab)
     (atab-add-altn atab altn errs repr)))
 
 (define (atab-add-altn atab altn errs repr)
@@ -220,7 +222,7 @@
          (ormap (curry equal? altn) (hash-keys alt->points)))
     atab]
    [else
-    (define alts->pnts*1 (remove-chnged-pnts point->alts alt->points best-pnts))
+    (define alts->pnts*1 (remove-chnged-pnts point->alts alt->points best-pnts cost))
     (define alts->pnts*2 (hash-set alts->pnts*1 altn (append best-pnts tied-pnts)))
     (define pnts->alts*1 (override-at-pnts point->alts best-pnts altn cost errs))
     (define pnts->alts*2 (append-at-pnts pnts->alts*1 tied-pnts altn cost))
@@ -245,26 +247,32 @@
 ;; The completeness invariant states that at any time, for every point there exists some
 ;; alt that is best at it.
 (define (check-completeness-invariant atab #:message [message ""])
-  (if (andmap (negate (compose null? point-rec-altns
-             (curry hash-ref (alt-table-point->alts atab))))
-        (hash-keys (alt-table-point->alts atab)))
+  (if (for/and ([(pt ch) (in-hash (alt-table-point->alts atab))])
+        (for/or ([(c rec) (in-hash ch)])
+          (not (null? (cost-rec-altns rec)))))
       atab
       (error (string-append "Completeness invariant violated. " message))))
+
+(define (pnt-maps-to-alt? pt altn pnt->alts)
+  (define cost-hash (hash-ref pnt->alts pt))
+  (for ([rec (hash-values cost-hash)])
+    (member altn (cost-rec-altns rec))))
+
+(define (alt-maps-to-pnt? altn pt alt->pnts)
+  (member pt (hash-ref alt->pnts altn)))
 
 ;; The reflexive invariant is this: a) For every alternative, for every point it maps to,
 ;; those points also map back to the alternative. b) For every point, for every alternative
 ;; it maps to, those alternatives also map back to the point.
 (define (check-reflexive-invariant atab #:message [message ""])
-  (if (and (andmap (λ (altn)
-         (andmap (λ (pnt)
-             (member altn (point-rec-altns (hash-ref (alt-table-point->alts atab) pnt))))
-           (hash-ref (alt-table-alt->points atab) altn)))
-       (hash-keys (alt-table-alt->done? atab)))
-     (andmap (λ (pnt)
-         (andmap (λ (altn)
-             (member pnt (hash-ref (alt-table-alt->points atab) altn)))
-           (point-rec-altns (hash-ref (alt-table-point->alts atab) pnt))))
-       (hash-keys (alt-table-point->alts atab))))
+  (define pnt->alts (alt-table-point->alts atab))
+  (define alt->pnts (alt-table-alt->points atab))
+  (if (and 
+        (for/and ([(altn pnts) (in-hash alt->pnts)])
+          (andmap (curryr pnt-maps-to-alt? altn pnt->alts) pnts))
+        (for/and ([(pt ch) (in-hash pnt->alts)])
+          (for/and ([(c rec) (in-hash ch)])
+            (andmap (curryr alt-maps-to-pnt? pt alt->pnts) (cost-rec-altns rec)))))
       atab
       (error (string-append "Reflexive invariant violated. " message))))
 
@@ -273,7 +281,9 @@
   (hash-for-each (alt-table-alt->points atab)
                  (λ (k v)
                     (let ([cnt (for/list ([pt v])
-                                 (length (point-rec-altns (hash-ref (alt-table-point->alts atab) pt))))])
+                                 (let ([cost (alt-cost k)]
+                                       [cost-hash (hash-ref (alt-table-point->alts atab) pt)])
+                                   (length (cost-rec-altns (hash-ref cost-hash cost)))))])
                       (when (not (= (apply min cnt) 1))
                         (error (string-append "Minimality invariant violated. " message)))))))
 
