@@ -210,7 +210,6 @@
   (define progs (map alt-program altns))
   (define errss (apply vector-map list (batch-errors progs (alt-table-context atab) repr)))
   (for/fold ([atab atab]) ([altn (in-list altns)] [errs (in-vector errss)])
-    (check-minimality-invariant atab)
     (atab-add-altn atab altn errs repr)))
 
 (define (atab-add-altn atab altn errs repr)

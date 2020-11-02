@@ -56,7 +56,8 @@
                        (*num-iterations*)
                        #:precondition (test-precondition test)
                        #:specification (test-specification test)
-                       #:precision output-prec))
+                       #:precision output-prec
+                       #:cost (test-cost test)))
 
         (define context (*pcontext*))
         (when seed (set-seed! seed))
@@ -123,8 +124,7 @@
 
   (define eng (engine in-engine))
   (if (engine-run (*timeout*) eng)
-      (begin
-        (engine-result eng))
+      (engine-result eng)
       (parameterize ([*timeline-disabled* false])
         (timeline-load! timeline)
         (test-timeout test (bf-precision) (*timeout*) (timeline-extract output-repr) '()))))

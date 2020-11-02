@@ -32,7 +32,7 @@
 ;; `infer-splitpoints` and `combine-alts` are split so the mainloop
 ;; can insert a timeline break between them.
 
-(define (infer-splitpoints alts repr)
+(define (infer-splitpoints alts repr cost)
   (debug "Finding splitpoints for:" alts #:from 'regime #:depth 2)
   (define branch-exprs
     (if (flag-set? 'reduce 'branch-expressions)
@@ -52,7 +52,13 @@
                    (for/or ([si (option-split-indices unsound-option)])
                      (not (set-member? sound-alts (list-ref alts (si-cidx si))))))
           (sow (option-on-expr sound-alts bexpr repr))))))
-  (define best (argmin (compose errors-score option-errors) options))
+  (define options*
+    (filter (λ (x) (< (apply + (expr-cost (option-expr x))
+                               (map alt-cost (option-alts x)))
+                      cost))
+            options))
+  (define best (argmin (compose errors-score option-errors)
+                       (if (null? options*) options options*)))
   (debug "Found split indices:" best #:from 'regime #:depth 3)
   best)
 

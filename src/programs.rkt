@@ -38,10 +38,16 @@
   (match-define (list (or 'lambda 'λ 'FPCore) (list vars ...) body) prog)
   (expr-cost body))
 
-(define/match (expr-cost expr)
-  [((list 'if cond ift iff)) (+ 1 (expr-cost cond) (max (expr-cost ift) (expr-cost iff)))]
-  [((list op args ...)) (apply + 1 (map expr-cost args))]
-  [(_) 1])
+(define (expr-cost expr)
+  (let loop ([expr expr] [repr (*output-repr*)])
+    (match expr
+     [(list 'if cond ift iff)
+      (+ 1 (loop cond repr) (max (loop ift repr) (loop iff repr)))]
+     [(list op args ...)
+      (let ([ireprs (map get-representation (operator-info op 'itype))])
+        (apply + (operator-cost op (representation-total-bits repr))
+                 (map loop args ireprs)))]
+     [_ (representation-total-bits repr)])))
 
 ;; Returns type name
 ;; Fast version does not recurse into functions applications

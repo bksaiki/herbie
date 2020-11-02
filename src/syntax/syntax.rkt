@@ -7,7 +7,8 @@
          get-parametric-operator parametric-operators parametric-operators-reverse
          get-parametric-constant parametric-constants parametric-constants-reverse
          *unknown-d-ops* *unknown-f-ops* *loaded-ops*
-         repr-conv? rewrite-repr-op? get-repr-conv)
+         repr-conv? rewrite-repr-op? get-repr-conv
+         operator-cost)
 
 (module+ internals 
   (provide operators constants define-constant define-operator infix-joiner
@@ -587,6 +588,46 @@
 (define-operator (binary32->binary64 binary32->binary64 binary32) binary64
   [fl (curryr real->double-flonum)] [bf identity] [ival #f]
   [nonffi (curryr real->double-flonum)])
+
+;; Operator cost
+
+(define (operator-cost op bits)
+  (* bits
+    (match op
+     ['+.f64    1]
+     ['-.f64    1]
+     ['neg.f64  1]
+     ['*.f64    1]
+     ['/.f64    1]
+     ['abs.f64  2]
+     [=.f64     1]
+     [>.f64     3]
+     [<.f64     3]
+     [>=.f64    3]
+     [<=.f64    3]
+     [fma.f64   2000]
+     
+     ['+.f32    1]
+     ['-.f32    1]
+     ['neg.f32  1]
+     ['*.f32    1]
+     ['/.f32    1]
+     ['abs.f32  2]
+     [=.f32     1]
+     [>.f32     3]
+     [<.f32     3]
+     [>=.f32    3]
+     [<=.f32    3]
+
+     [not       1]
+     [and       1]
+     [or        1]
+     [if        3]
+
+     [binary32->binary64 15]
+     [binary64->binary32 4]
+
+     [_         100])))
 
 ;; Expression predicates ;;
 

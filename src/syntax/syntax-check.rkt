@@ -107,6 +107,12 @@
 
   (when (dict-has-key? prop-dict ':herbie-target)
     (check-expression* (dict-ref prop-dict ':herbie-target) vars error!))
+
+  (when (dict-has-key? prop-dict ':herbie-cost)
+    (define cost (dict-ref prop-dict ':herbie-cost))
+    (define val (syntax-e cost))
+    (unless (and (number? val) (> val 0))
+      (error! val "Invalid :herbie-cost ~a; must be a positive number" cost)))
     
   (when (dict-has-key? prop-dict ':herbie-conversions)
     (define conversions (dict-ref prop-dict ':herbie-conversions))

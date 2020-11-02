@@ -45,6 +45,7 @@
   (shellstate-simplified (^shell-state^)))
 
 (define *sampler* (make-parameter #f))
+(define *cost-limit* (make-parameter #f))
 
 (define (check-unused-variables vars precondition expr)
   ;; Fun story: you might want variables in the precondition that
@@ -63,8 +64,10 @@
 (define (setup-prog! prog
                      #:precondition [precondition #f]
                      #:precision [precision 'binary64]
-                     #:specification [specification #f])
+                     #:specification [specification #f]
+                     #:cost [cost-limit #f])
   (*output-repr* (get-representation precision))
+  (*cost-limit* cost-limit)
   (when (empty? (*needed-reprs*)) ; if empty, probably debugging
     (*needed-reprs* (list (*output-repr*) (get-representation 'bool))))
   (*var-reprs* (map (curryr cons (*output-repr*)) (program-variables prog)))
@@ -396,12 +399,14 @@
 (define (run-improve prog iters
                      #:precondition [precondition #f]
                      #:precision [precision 'binary64]
-                     #:specification [specification #f])
+                     #:specification [specification #f]
+                     #:cost [cost-limit #f])
   (debug #:from 'progress #:depth 1 "[Phase 1 of 3] Setting up.")
   (setup-prog! prog
                #:specification specification
                #:precondition precondition
-               #:precision precision)
+               #:precision precision
+               #:cost cost-limit)
   (debug #:from 'progress #:depth 1 "[Phase 2 of 3] Improving.")
   (when (flag-set? 'setup 'simplify)
     (^children^ (atab-active-alts (^table^)))
@@ -415,7 +420,8 @@
 
 (define (extract!)
   (define repr (*output-repr*))
-  (define all-alts (atab-all-alts (^table^)))
+  (define all-alts (filter (λ (x) (< (alt-cost x) (*cost-limit*)))
+                   (atab-all-alts (^table^))))
   (*all-alts* all-alts)
   (define joined-alt
     (cond
@@ -423,7 +429,7 @@
            (equal? (type-name (representation-type repr)) 'real)
            (not (null? (program-variables (alt-program (car all-alts))))))
       (timeline-event! 'regimes)
-      (define option (infer-splitpoints all-alts repr))
+      (define option (infer-splitpoints all-alts repr (*cost-limit*)))
       (timeline-event! 'bsearch)
       (combine-alts option repr (*sampler*))]
      [else
