@@ -1,7 +1,7 @@
 #lang racket
 
 (require "programs.rkt")
-(provide (struct-out change) (struct-out alt) make-alt
+(provide (struct-out change) (struct-out alt) make-alt alt-equal?
          alt-cost alt-add-event *start-prog* *all-alts*)
 
 ;; Alts are a lightweight audit trail.
@@ -24,6 +24,9 @@
 
 (define (alt-cost altn)
   (program-cost (alt-program altn)))
+
+(define (alt-equal? x y)
+  (equal? (alt-program x) (alt-program y)))
 
 ;; A useful parameter for many of Herbie's subsystems, though
 ;; ultimately one that should be located somewhere else or perhaps
