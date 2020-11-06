@@ -108,10 +108,11 @@
               (define split-var? (equal? var (regime-var end-alt)))
               (define title "The X axis uses an exponential scale")
               `(figure ([id ,(format "fig-~a" idx)] [class ,(if split-var? "default" "")])
-                ,@(for/list ([alt other-alts] [idx2 (in-naturals)])
-                    (let ([name (format "Other~a" idx2)])
-                      `(img ([width "800"] [height "300"] [title ,title] [data-name ,name]
-                             [src ,(format "plot-~am~a.png" idx idx2)]))))
+                ,@(reverse ; buttons are sorted R/L
+                    (for/list ([alt other-alts] [idx2 (in-naturals)])
+                      (let ([name (format "Other~a" idx2)])
+                        `(img ([width "800"] [height "300"] [title ,title] [data-name ,name]
+                               [src ,(format "plot-~am~a.png" idx idx2)])))))
                 (img ([width "800"] [height "300"] [title ,title]
                       [src ,(format "plot-~a.png" idx)]))
                 (img ([width "800"] [height "300"] [title ,title] [data-name "Input"]
@@ -141,6 +142,18 @@
                                               (resugar-program (test-target test) repr)))
                                          "\\]"))
            "")
+
+        ,@(for/list ([alt other-alts] [errs other-errors] [idx (in-naturals 1)])
+            (define name (format "Alternative ~a" idx))
+            `(section ([id "alternatives"] [style "margin: 2em 0;"])
+              ,(if (zero? idx) `(h1 "Alternatives") "")
+              (table
+                (tr (th ([style "font-weight:bold"]) ,name))
+                (tr (th "Accuracy") (td ,(format-bits (errors-score errs)))))
+              (div ([class "math"]) "\\[" ,(core->tex
+                                            (program->fpcore
+                                              (resugar-program (alt-program alt) repr)))
+                                         "\\]")))
 
       (section ([id "history"])
        (h1 "Derivation")

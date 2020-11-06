@@ -439,7 +439,7 @@
   (timeline-event! 'simplify)
   (define cleaned-alts
     (cons (final-simplify (car final-alts))
-          (parameterize ([*timeline-disabled* #f])
-            (map final-simplify final-alts))))
+          (parameterize ([*timeline-disabled* true])
+            (map final-simplify (cdr final-alts)))))
   (timeline-event! 'end)
   cleaned-alts)
