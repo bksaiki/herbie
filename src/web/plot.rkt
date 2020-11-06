@@ -12,6 +12,7 @@
 (define *red-theme* (color-theme "pink" "red" "darkred"))
 (define *blue-theme* (color-theme "lightblue" "blue" "navy"))
 (define *green-theme* (color-theme "lightgreen" "green" "darkgreen"))
+(define *gray-theme* (color-theme "gray" "gray" "gray"))
 
 ;;  Repr conversions
 
@@ -310,7 +311,11 @@
     (match letter
       ['r (values *red-theme*   test-success-start-error)]
       ['g (values *green-theme* test-success-target-error)]
-      ['b (values *blue-theme*  test-success-end-error)]))
+      ['b (values *blue-theme*  test-success-end-error)]
+      [(? (conjoin string? (curryr string-prefix? "m")))
+       (define num (string->number (substring letter 1)))
+       (values *gray-theme*
+               (λ (x) (list-ref (test-success-other-errors x) num)))]))
 
   (define repr (test-output-repr (test-result-test result)))
   (define pts (test-success-newpoints result))

@@ -55,6 +55,7 @@
                  baseline-error oracle-error other-alts other-errors all-alts)
    result)
   (define repr (test-output-repr test))
+  (define other-alts* (if other-alts other-alts '()))
 
   (fprintf out "<!doctype html>\n")
   (write-xexpr
@@ -107,6 +108,10 @@
               (define split-var? (equal? var (regime-var end-alt)))
               (define title "The X axis uses an exponential scale")
               `(figure ([id ,(format "fig-~a" idx)] [class ,(if split-var? "default" "")])
+                ,@(for/list ([alt other-alts] [idx2 (in-naturals)])
+                    (let ([name (format "Other~a" idx2)])
+                      `(img ([width "800"] [height "300"] [title ,title] [data-name ,name]
+                             [src ,(format "plot-~am~a.png" idx idx2)]))))
                 (img ([width "800"] [height "300"] [title ,title]
                       [src ,(format "plot-~a.png" idx)]))
                 (img ([width "800"] [height "300"] [title ,title] [data-name "Input"]

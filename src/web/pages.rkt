@@ -11,13 +11,18 @@
 (define (all-pages result)
   (define test (test-result-test result))
   (define good? (test-success? result))
+  (define-values (options types)
+    (if good?
+        (let ([other (test-success-other-alts result)])
+          (values other (build-list (length other) (λ (x) (format "m~a" x)))))
+        (values #f #f)))
 
   (define pages
     `("graph.html"
       ,(and good? "interactive.js")
       "timeline.html" "timeline.json"
       ,@(for/list ([v (test-vars test)] [idx (in-naturals)]
-                   #:when good? [type '("" "r" "g" "b")]
+                   #:when good? [type (append (list "" "r" "g" "b") types)]
                    #:unless (and (equal? type "g") (not (test-output test)))
                    ;; Don't generate a plot with only one X value else plotting throws an exception
                    #:when (> (unique-values (test-success-newpoints result) idx) 1))
@@ -48,7 +53,9 @@
     [(regexp #rx"^plot-([0-9]+).png$" (list _ idx))
      (make-axis-plot result out (string->number idx))]
     [(regexp #rx"^plot-([0-9]+)([rbg]).png$" (list _ idx letter))
-     (make-points-plot result out (string->number idx) (string->symbol letter))]))
+     (make-points-plot result out (string->number idx) (string->symbol letter))]
+    [(regexp #rx"^plot-([0-9]+)(m[0-9]+).png$" (list _ idx letter))
+     (make-points-plot result out (string->number idx) letter)]))
 
 (define (get-interactive-js result repr)
   (define start-fpcore 
