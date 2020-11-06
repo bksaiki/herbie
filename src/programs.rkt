@@ -44,9 +44,13 @@
      [(list 'if cond ift iff)
       (+ 1 (loop cond repr) (max (loop ift repr) (loop iff repr)))]
      [(list op args ...)
-      (let ([ireprs (map get-representation (operator-info op 'itype))])
-        (apply + (operator-cost op (representation-total-bits repr))
-                 (map loop args ireprs)))]
+      (define ireprs (operator-info op 'itype))
+      (define ireprs*
+        (if (list? ireprs)
+            (map get-representation ireprs)
+            (make-list (length args) (get-representation ireprs))))
+      (apply + (operator-cost op (representation-total-bits repr))
+               (map loop args ireprs*))]
      [_ (representation-total-bits repr)])))
 
 ;; Returns type name

@@ -420,21 +420,17 @@
 
 (define (extract!)
   (define repr (*output-repr*))
-  (define all-alts 
-    (if (*cost-limit*)
-        (filter (λ (x) (< (alt-cost x) (*cost-limit*)))
-                (atab-all-alts (^table^)))
-        (atab-all-alts (^table^))))
+  (define all-alts (atab-all-alts (^table^)))
   (*all-alts* all-alts)
   (define joined-alt
     (cond
      [(and (flag-set? 'reduce 'regimes) (> (length all-alts) 1)
            (equal? (type-name (representation-type repr)) 'real)
            (not (null? (program-variables (alt-program (car all-alts))))))
-      (timeline-event! 'regimes)
-      (define option (infer-splitpoints all-alts repr))
-      (timeline-event! 'bsearch)
-      (combine-alts option repr (*sampler*))]
+      (define many (compute-regimes all-alts repr 10 (*sampler*)))
+      (for ([altn many] [i (in-naturals 1)])
+        (printf "[~a, ~a]: ~a : ~a\n" i (score-alt altn) (alt-cost altn) altn))
+      (first many)]  ; return best
      [else
       (argmin score-alt all-alts)]))
   (timeline-event! 'simplify)
