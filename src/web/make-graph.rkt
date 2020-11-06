@@ -52,7 +52,7 @@
    (test-success test bits time timeline warnings
                  start-alt end-alt points exacts start-est-error end-est-error
                  newpoints newexacts start-error end-error target-error
-                 baseline-error oracle-error all-alts)
+                 baseline-error oracle-error other-alts other-errors all-alts)
    result)
   (define repr (test-output-repr test))
 

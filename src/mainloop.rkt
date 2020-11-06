@@ -418,26 +418,28 @@
   (debug #:from 'progress #:depth 1 "[Phase 3 of 3] Extracting.")
   (extract!))
 
+(define (final-simplify altn)
+  (alt `(λ ,(program-variables (alt-program altn))
+           ,(simplify-expr (program-body (alt-program altn))
+                           #:rules (*fp-safe-simplify-rules*)))
+        'final-simplify (list altn)))
+
 (define (extract!)
   (define repr (*output-repr*))
   (define all-alts (atab-all-alts (^table^)))
   (*all-alts* all-alts)
-  (define joined-alt
+  (define final-alts
     (cond
      [(and (flag-set? 'reduce 'regimes) (> (length all-alts) 1)
            (equal? (type-name (representation-type repr)) 'real)
            (not (null? (program-variables (alt-program (car all-alts))))))
-      (define many (compute-regimes all-alts repr 10 (*sampler*)))
-      (for ([altn many] [i (in-naturals 1)])
-        (printf "[~a, ~a]: ~a : ~a\n" i (score-alt altn) (alt-cost altn) altn))
-      (first many)]  ; return best
+      (compute-regimes all-alts repr 10 (*sampler*))]
      [else
-      (argmin score-alt all-alts)]))
+      (list (argmin score-alt all-alts))]))
   (timeline-event! 'simplify)
-  (define cleaned-alt
-    (alt `(λ ,(program-variables (alt-program joined-alt))
-            ,(simplify-expr (program-body (alt-program joined-alt))
-                            #:rules (*fp-safe-simplify-rules*)))
-         'final-simplify (list joined-alt)))
+  (define cleaned-alts
+    (cons (final-simplify (car final-alts))
+          (parameterize ([*timeline-disabled* #f])
+            (map final-simplify final-alts))))
   (timeline-event! 'end)
-  cleaned-alt)
+  cleaned-alts)
