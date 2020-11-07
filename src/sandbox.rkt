@@ -66,13 +66,13 @@
           (parameterize ([*num-points* (*reeval-pts*)])
             (prepare-points (test-specification test) (test-precondition test) output-repr (*sampler*))))
 
-        (define best (car alts))
-        (define rest (cdr alts))
+        (define best-alt (car alts))
+        (define other-alts (cdr alts))
         (define fns
           (map (λ (alt) (eval-prog (alt-program alt) 'fl output-repr))
                (remove-duplicates (*all-alts*))))
 
-        (define end-errs (errors (alt-program best) newcontext output-repr))
+        (define end-errs (errors (alt-program best-alt) newcontext output-repr))
         (define baseline-errs (baseline-error fns context newcontext output-repr))
         (define oracle-errs (oracle-error fns newcontext output-repr))
 
@@ -89,12 +89,9 @@
                  "Target error score:" (errors-score
                                          (errors (test-target test) newcontext output-repr))))
 
-        (define other-errs 
-          (if (null? rest)
-              #f
-              (map (λ (alt) (errors (alt-program alt) newcontext output-repr)) rest)))
-        (when other-errs
-          (for ([errs other-errs] [alt rest])
+        (define other-errs (map (λ (alt) (errors (alt-program alt) newcontext output-repr)) other-alts))
+        (unless (null? other-errs)
+          (for ([errs other-errs] [alt other-alts])
             (debug #:from 'regime-testing #:depth 1
                    "Alternate end program score: "
                    (errors-score errs) " for " (alt-program alt))))
@@ -105,9 +102,9 @@
                       (bf-precision)
                       (- (current-inexact-milliseconds) start-time)
                       (timeline-extract output-repr)
-                      warning-log (make-alt (test-program test)) best points exacts
+                      warning-log (make-alt (test-program test)) best-alt points exacts
                       (errors (test-program test) context output-repr)
-                      (errors (alt-program best) context output-repr)
+                      (errors (alt-program best-alt) context output-repr)
                       newpoints newexacts
                       (errors (test-program test) newcontext output-repr)
                       end-errs
@@ -116,8 +113,7 @@
                           #f)
                       baseline-errs
                       oracle-errs
-                      (if (null? rest) #f rest)
-                      other-errs
+                      other-alts other-errs
                       (*all-alts*)))))
 
   (define (on-exception start-time e)

@@ -11,11 +11,11 @@
 (define (all-pages result)
   (define test (test-result-test result))
   (define good? (test-success? result))
-  (define-values (options types)
+  (define types
     (if good?
         (let ([other (test-success-other-alts result)])
-          (values other (build-list (length other) (λ (x) (format "m~a" x)))))
-        (values #f #f)))
+          (build-list (length other) (λ (x) (format "m~a" x))))
+        '()))
 
   (define pages
     `("graph.html"

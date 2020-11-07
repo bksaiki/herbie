@@ -55,7 +55,6 @@
                  baseline-error oracle-error other-alts other-errors all-alts)
    result)
   (define repr (test-output-repr test))
-  (define other-alts* (if other-alts other-alts '()))
 
   (fprintf out "<!doctype html>\n")
   (write-xexpr

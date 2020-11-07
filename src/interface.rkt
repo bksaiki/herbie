@@ -11,8 +11,6 @@
 (module+ internals 
   (provide define-representation register-generator! register-representation!))
 
-(define *output-repr* (make-parameter #f))
-(define *var-reprs* (make-parameter '()))
 (define *reprs-with-rules* (make-parameter '()))
 (define *needed-reprs* (make-parameter '()))
 
@@ -150,3 +148,8 @@
 
 (define (special-value? x repr)
   ((representation-special-values repr) x))
+
+;; Global precision tracking
+;; Leave this here else unit tests will fail
+(define *output-repr* (make-parameter #f))
+(define *var-reprs* (make-parameter '()))
