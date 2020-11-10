@@ -433,7 +433,7 @@
      [(and (flag-set? 'reduce 'regimes) (> (length all-alts) 1)
            (equal? (type-name (representation-type repr)) 'real)
            (not (null? (program-variables (alt-program (car all-alts))))))
-      (compute-regimes all-alts repr 6 (*sampler*))]
+      (compute-regimes all-alts repr (*sampler*))]
      [else
       (list (argmin score-alt all-alts))]))
   (timeline-event! 'simplify)

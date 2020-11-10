@@ -30,55 +30,40 @@
 ;; pidx = Point index: The index of the point to the left of which we should split.
 (struct si (cidx pidx) #:prefab)
 
-(define (best-regimes alts repr sampler)
-  (parameterize ([*timeline-disabled* #f])
-    (timeline-event! 'regimes)
-    (define option (infer-splitpoints alts repr))
-    (timeline-event! 'bsearch)
-    (combine-alts option repr sampler)))
+(define (single-regimes alts repr sampler)
+  (timeline-event! 'regimes)
+  (define option (infer-splitpoints alts repr))
+  (timeline-event! 'bsearch)
+  (combine-alts option repr sampler))
 
-(define (regimes-options alts repr count sampler)
-  (define best (best-regimes alts repr sampler))
-  (define simplest (first alts))
-  (define best-cost (alt-cost best))
-  (define simplest-cost (alt-cost simplest))
-  (define middle
-    (let loop ([alts alts] [needed (- count 2)])
-      (cond
-       [(zero? needed) '()]
-       [(= (length alts) 1) alts]
-       [else
-        (define half (inexact->exact (round (/ (length alts) 2))))
-        (define lower (take alts half))
-        (define mid (combine-alts (infer-splitpoints lower repr) repr sampler))
-        (define mid-cost (alt-cost mid))
-        (cond
-         [(= mid-cost best-cost)
-          (loop lower needed)]
-         [(= mid-cost simplest-cost)
-          (loop (drop alts half) (- (length alts) half))]
-         [else
-          (define-values (low high)
-            (let ([v (/ (- needed 1) 2)])
-              (values (inexact->exact (floor v)) (inexact->exact (ceiling v)))))
-          (define q1 (loop lower low))
-          (define q2 (loop (drop alts half) high))
-          (append q2 (cons mid q1))])])))
-  (cons best (append middle (list simplest))))
-
-(define (compute-regimes alts repr count sampler)
-  (define sorted (sort alts < #:key alt-cost))
-  (parameterize ([*timeline-disabled* #t])
+(define (regimes-options best simplest alts repr sampler)
+  (let loop ([lo 1] [hi (- (length alts) 2)] [best best] [simplest simplest])
     (cond
-     [(= count 1)
-      (best-regimes sorted repr sampler)]
-     [(= count 2)
-      (list (best-regimes sorted repr sampler)
-            (first sorted))]
+     [(>= lo (- hi 1)) '()]
      [else
-      (remove-duplicates
-        (regimes-options sorted repr count sampler)
-        #:key alt-cost)]))) 
+      (define mid (inexact->exact (round (/ (- hi lo) 2))))
+      (define opt (single-regimes (take alts (+ mid lo)) repr sampler))
+      (cond
+       [(= (alt-cost simplest) (alt-cost opt))
+        (loop (+ lo mid 1) hi best simplest)]
+       [(= (alt-cost best) (alt-cost opt))
+        (loop lo (- (+ lo mid) 1) best simplest)]
+       [else
+        (append (loop (+ lo mid 1) hi best opt)
+                (list opt)
+                (loop lo (- (+ lo mid) 1) opt simplest))])])))
+
+(define (compute-regimes alts repr sampler)
+  (define sorted (sort alts < #:key alt-cost))
+  (define best (single-regimes alts repr sampler))
+  (define simplest (first alts))
+  (if (= (alt-cost best) (alt-cost simplest))
+      (list best)
+      (parameterize ([*timeline-disabled* #t])
+        (cons best
+          (append
+            (regimes-options best simplest alts repr sampler)
+            (list simplest))))))
       
 ;; `infer-splitpoints` and `combine-alts` are split so the mainloop
 ;; can insert a timeline break between them.
