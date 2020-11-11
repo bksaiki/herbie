@@ -39,14 +39,19 @@
 (define (regimes-options best simplest alts repr sampler)
   (let loop ([lo 1] [hi (- (length alts) 2)] [best best] [simplest simplest])
     (cond
-     [(>= lo (- hi 1)) '()]
+     [(> lo hi) '()]
+     [(= lo hi)
+      (define opt (single-regimes (take alts lo) repr sampler))
+      (if (nand (alt-equal? best opt) (alt-equal? simplest opt))
+          (list opt)
+          '())]
      [else
       (define mid (inexact->exact (round (/ (- hi lo) 2))))
       (define opt (single-regimes (take alts (+ mid lo)) repr sampler))
       (cond
-       [(= (alt-cost simplest) (alt-cost opt))
+       [(alt-equal? simplest opt)
         (loop (+ lo mid 1) hi best simplest)]
-       [(= (alt-cost best) (alt-cost opt))
+       [(alt-equal? best opt)
         (loop lo (- (+ lo mid) 1) best simplest)]
        [else
         (append (loop (+ lo mid 1) hi best opt)
@@ -57,7 +62,7 @@
   (define sorted (sort alts < #:key alt-cost))
   (define best (single-regimes alts repr sampler))
   (define simplest (first alts))
-  (if (= (alt-cost best) (alt-cost simplest))
+  (if (alt-equal? best simplest)
       (list best)
       (parameterize ([*timeline-disabled* #t])
         (cons best
