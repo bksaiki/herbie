@@ -22,7 +22,7 @@
 (struct test-timeout test-result ())
 
 (define *reeval-pts* (make-parameter 8000))
-(define *timeout* (make-parameter (* 1000 60 5/2)))
+(define *timeout* (make-parameter (* 1000 60 10)))
 
 (define (get-p&es context)
   (for/lists (pts exs)
@@ -67,6 +67,11 @@
           (parameterize ([*num-points* (*reeval-pts*)])
             (prepare-points (test-specification test) (test-precondition test) output-repr (*sampler*))))
 
+        (define pareto-m (pareto-measure alts newcontext output-repr))
+        (timeline-push! 'other (list "Pareto" pareto-m))
+        (debug #:from 'pareto-measure #:depth 1
+               "Pareto frontier hypervolume metric: " pareto-m)
+
         (define best-alt (car alts))
         (define other-alts (cdr alts))
         (define fns
@@ -96,8 +101,6 @@
             (debug #:from 'regime-testing #:depth 1
                    "Alternate end program score: "
                    (errors-score errs) " for " (alt-program alt))))
-
-        (define pareto-m (pareto-measure alts newcontext output-repr))
 
         (define-values (points exacts) (get-p&es context))
         (define-values (newpoints newexacts) (get-p&es newcontext))

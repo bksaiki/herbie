@@ -104,7 +104,7 @@
           [(or 'locations 'bstep
                'inputs 'outputs
                'kept 'min-error
-               'egraph)
+               'egraph 'other)
            (void)]))
       (unless (void? v*)
         (dict-set! data k v*))))

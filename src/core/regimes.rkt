@@ -65,10 +65,12 @@
   (if (alt-equal? best simplest)
       (list best)
       (parameterize ([*timeline-disabled* #t])
-        (cons best
-          (append
-            (regimes-options best simplest alts repr sampler)
-            (list simplest))))))
+        (remove-duplicates
+          (cons best
+            (append
+              (regimes-options best simplest alts repr sampler)
+              (list simplest)))
+          alt-equal?))))
       
 ;; `infer-splitpoints` and `combine-alts` are split so the mainloop
 ;; can insert a timeline break between them.

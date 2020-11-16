@@ -69,6 +69,7 @@
          ,@(dict-call curr render-phase-sampling 'sampling)
          ,@(dict-call curr render-phase-outcomes 'outcomes)
          ,@(dict-call curr render-phase-compiler 'compiler)
+         ,@(dict-call curr render-phase-other 'other)
          )))
 
 (define (if-cons test x l)
@@ -225,6 +226,11 @@
   `((dt "Compiler")
     (dd (p "Compiled " ,(~a size) " to " ,(~a compiled) " computations "
            "(" ,(format-percent ratio) " saved)"))))
+
+(define (render-phase-other other)
+  (match-define (list (list name data)) other)
+  `((dt ,(format "~a" name))
+    (dd (p ,(format "~a" data)))))
 
 (define (render-phase-outcomes outcomes)
   `((dt "Results")
