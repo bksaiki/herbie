@@ -20,9 +20,11 @@
   (define total-area (* (- high-score low-score) (- high-cost low-cost)))
   (define scores* (map (curryr - low-score) (remove-ends scores)))
   (define costs* (map (curryr - low-cost) (remove-ends costs)))
-  (for/fold ([area 0] [cost0 0] #:result (/ area total-area))
-            ([cost costs*] [score scores*])
-    (values (+ area (* (- cost cost0) score)) cost)))
+  (if (zero? total-area)
+      0.0
+      (for/fold ([area 0] [cost0 0] #:result (/ area total-area))
+                ([cost costs*] [score scores*])
+        (values (+ area (* (- cost cost0) score)) cost))))
 
 (define (paired-less? elem1 elem2)
   (let ([c1 (car elem1)] [c2 (car elem2)])

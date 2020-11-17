@@ -8,7 +8,7 @@ figure { margin: 0; }
 
 #large { margin: 2em 0; text-align: center; }
 #large div { margin: 0 1em; display: inline-block; vertical-align: top; }
-#large .number { font-size: 3em; display: block; }
+#large .number { font-size: 2.5em; display: block; }
 @media print { #large { margin-top: 0; }}
 
 /* Arrow chart */
@@ -280,9 +280,9 @@ pre.shell code:before { content: "$ "; font-weight: bold; }
 
 /* Alternatives */
 
-#alternatives table { width: 300px; display: inline-table; vertical-align: top; }
+#alternatives table { width: 275px; display: inline-table; vertical-align: top; }
 #alternatives table th { text-align: left; font-weight: normal; }
-#alternatives table td { text-align: left; }
+#alternatives table td { text-align: left; width: 75px; }
 #alternatives div { display: inline-block; width: 500px; }
 
 /* Formatting backtraces */

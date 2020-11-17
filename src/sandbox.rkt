@@ -17,7 +17,7 @@
 (struct test-success test-result
   (start-alt end-alt points exacts start-est-error end-est-error
    newpoints newexacts start-error end-error target-error
-   baseline-error oracle-error other-alts other-errors all-alts))
+   baseline-error oracle-error other-alts other-errors all-alts costs))
 (struct test-failure test-result (exn))
 (struct test-timeout test-result ())
 
@@ -104,6 +104,8 @@
 
         (define-values (points exacts) (get-p&es context))
         (define-values (newpoints newexacts) (get-p&es newcontext))
+        (define costs (map alt-cost alts))
+
         (test-success test
                       (bf-precision)
                       (- (current-inexact-milliseconds) start-time)
@@ -120,7 +122,8 @@
                       baseline-errs
                       oracle-errs
                       other-alts other-errs
-                      (*all-alts*)))))
+                      (*all-alts*)
+                      costs))))
 
   (define (on-exception start-time e)
     (parameterize ([*timeline-disabled* false])
