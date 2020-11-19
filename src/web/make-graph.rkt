@@ -147,7 +147,7 @@
         ,@(for/list ([alt other-alts] [cost (cdr costs)] [errs other-errors] [idx (in-naturals 1)])
             (define name (format "Alternative ~a" idx))
             `(section ([id "alternatives"] [style "margin: 2em 0;"])
-              ,(if (zero? idx) `(h1 "Alternatives") "")
+              ,(if (= idx 1) `(h1 "Alternatives") "")
               (table
                 (tr (th ([style "font-weight:bold"]) ,name))
                 (tr (th "Accuracy") (td ,(format-bits (errors-score errs))))

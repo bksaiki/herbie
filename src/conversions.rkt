@@ -25,7 +25,6 @@
 
   (unless (hash-has-key? parametric-operators conv)
     (define impl (compose (representation-bf->repr orepr) (representation-repr->bf irepr)))
-    (eprintf "~a not found, falling back to default implementation... \n" conv)
     (register-operator! conv conv (list iprec) oprec  ; fallback implementation
       (list (cons 'fl impl) (cons 'bf identity) (cons 'ival identity)
             (cons 'nonffi impl))))

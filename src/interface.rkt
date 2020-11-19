@@ -151,5 +151,5 @@
 
 ;; Global precision tracking
 ;; Leave this here else unit tests will fail
-(define *output-repr* (make-parameter #f))
+(define *output-repr* (make-parameter (get-representation 'binary64)))
 (define *var-reprs* (make-parameter '()))
