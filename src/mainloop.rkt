@@ -60,6 +60,17 @@
           "unused ~a ~a" (if (equal? (set-count unused) 1) "variable" "variables")
           (string-join (map ~a unused) ", "))))
 
+(define (alts-for-every-repr altn)
+  (define prec (representation-name (*output-repr*)))
+  (filter (λ (altn) (program-body (alt-program altn)))
+    (for/list ([(k v) (in-hash (*conversions*))]
+              #:unless (equal? k prec)
+              #:when (set-member? v prec))
+      (define rewrite (get-rewrite-operator k))
+      (define prog (alt-program altn))
+      (define prog* `(λ ,(program-variables prog) (,rewrite ,(program-body prog))))
+      (alt (apply-repr-change prog*) 'start '()))))
+
 ;; Setting up
 (define (setup-prog! prog
                      #:precondition [precondition #f]
@@ -86,6 +97,8 @@
   (debug #:from 'progress #:depth 3 "[2/2] Setting up program.")
   (define alt (make-alt prog))
   (^table^ (make-alt-table (*pcontext*) alt (*output-repr*)))
+  (define alts (alts-for-every-repr alt))
+  (^table^ (atab-add-altns (^table^) alts (*output-repr*)))
   alt)
 
 ;; Information

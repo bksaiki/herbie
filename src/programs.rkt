@@ -477,7 +477,11 @@
               (and second-conv (list second-conv (list op body*)))))])]
      [(list (? rewrite-repr-op? op) body)
       (define prec* (operator-info op 'otype))
-      (loop body prec*)]
+      (if prec
+          (loop body prec*)
+          (let* ([conv (get-repr-conv prec* (representation-name (*output-repr*)))]
+                 [body* (loop body prec*)])
+            (and conv body* (list conv body*))))]
      [(list (? operator? op) args ...) 
       (define prec* (if prec prec (operator-info op 'otype)))
       (if (equal? (operator-info op 'otype) prec*)
