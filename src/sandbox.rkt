@@ -22,7 +22,7 @@
 (struct test-timeout test-result ())
 
 (define *reeval-pts* (make-parameter 8000))
-(define *timeout* (make-parameter (* 1000 60 15)))
+(define *timeout* (make-parameter (* 1000 60 600)))
 
 (define (get-p&es context)
   (for/lists (pts exs)
