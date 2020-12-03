@@ -30,47 +30,20 @@
 ;; pidx = Point index: The index of the point to the left of which we should split.
 (struct si (cidx pidx) #:prefab)
 
-(define (single-regimes alts repr sampler)
-  (timeline-event! 'regimes)
-  (define option (infer-splitpoints alts repr))
-  (timeline-event! 'bsearch)
-  (combine-alts option repr sampler))
-
-(define (regimes-options best simplest alts repr sampler)
-  (let loop ([lo 1] [hi (- (length alts) 2)] [best best] [simplest simplest])
-    (cond
-     [(> lo hi) '()]
-     [(= lo hi)
-      (define opt (single-regimes (take alts lo) repr sampler))
-      (if (nand (alt-equal? best opt) (alt-equal? simplest opt))
-          (list opt)
-          '())]
-     [else
-      (define mid (inexact->exact (round (/ (- hi lo) 2))))
-      (define opt (single-regimes (take alts (+ mid lo)) repr sampler))
-      (cond
-       [(alt-equal? simplest opt)
-        (loop (+ lo mid 1) hi best simplest)]
-       [(alt-equal? best opt)
-        (loop lo (- (+ lo mid) 1) best simplest)]
-       [else
-        (append (loop (+ lo mid 1) hi best opt)
-                (list opt)
-                (loop lo (- (+ lo mid) 1) opt simplest))])])))
-
 (define (compute-regimes alts repr sampler)
-  (define sorted (sort alts < #:key alt-cost))
-  (define best (single-regimes alts repr sampler))
-  (define simplest (first alts))
-  (if (alt-equal? best simplest)
-      (list best)
-      (parameterize ([*timeline-disabled* #t])
-        (remove-duplicates
-          (cons best
-            (append
-              (regimes-options best simplest alts repr sampler)
-              (list simplest)))
-          alt-equal?))))
+  (define sorted (sort alts > #:key alt-cost))
+  (let loop ([alts sorted] [n 0])
+    (cond
+    [(null? alts) '()]
+    [(= (length alts) 1) (list (car alts))]
+    [else
+      (parameterize ([*timeline-disabled* (positive? n)])
+        (timeline-event! 'regimes)
+        (define opt (infer-splitpoints alts repr))
+        (timeline-event! 'bsearch)
+        (define branched-alt (combine-alts opt repr sampler))
+        (define high (si-cidx (argmin (λ (x) (si-cidx x)) (option-split-indices opt))))
+        (cons branched-alt (loop (drop alts (+ high 1)) (+ n 1))))])))
       
 ;; `infer-splitpoints` and `combine-alts` are split so the mainloop
 ;; can insert a timeline break between them.

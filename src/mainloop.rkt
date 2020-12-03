@@ -150,14 +150,15 @@
     (list best)]
    [(< (length altns) 5)  ; best, cheapest
     (define simplest (argmin alt-cost altns))
-    (list simplest best)]
+    (list best simplest)]
    [else
     (define simplest (argmin alt-cost altns))
     (define pred (λ (x) (or (alt-equal? x best) (alt-equal? x simplest))))
-    (cons simplest
+    (append
+      (list best simplest)
       (let loop ([altns (filter-not pred altns)] [fuel 3])
         (if (zero? fuel)
-            (list best)
+            '()
             (let ([picked (list-ref altns (random 0 (length altns)))])
               (cons picked (loop (filter-not (curry alt-equal? picked) altns)
                                  (- fuel 1)))))))]))
@@ -486,4 +487,4 @@
           (parameterize ([*timeline-disabled* true])
             (map final-simplify (cdr final-alts)))))
   (timeline-event! 'end)
-  cleaned-alts)
+  (remove-duplicates cleaned-alts alt-equal?))
