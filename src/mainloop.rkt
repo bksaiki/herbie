@@ -141,6 +141,27 @@
   (debug #:from 'pick #:depth 4 "Picked " picked)
   (void))
 
+(define (choose-mult-alts)
+  (define altns (atab-not-done-alts (^table^)))
+  (define best (argmin score-alt altns))
+  (cond
+   [(null? altns) '()]
+   [(= (length altns) 1)  ; only best
+    (list best)]
+   [(< (length altns) 5)  ; best, cheapest
+    (define simplest (argmin alt-cost altns))
+    (list simplest best)]
+   [else
+    (define simplest (argmin alt-cost altns))
+    (define pred (λ (x) (or (alt-equal? x best) (alt-equal? x simplest))))
+    (cons simplest
+      (let loop ([altns (filter-not pred altns)] [fuel 3])
+        (if (zero? fuel)
+            (list best)
+            (let ([picked (list-ref altns (random 0 (length altns)))])
+              (cons picked (loop (filter-not (curry alt-equal? picked) altns)
+                                 (- fuel 1)))))))]))
+
 ;; Invoke the subsystems individually
 (define (localize!)
   (unless (^next-alt^)
@@ -397,16 +418,26 @@
     (raise-user-error 'run-iter! "An iteration is already in progress\n~a"
                       "Run (finish-iter!) to finish it, or (rollback-iter!) to abandon it.\n"))
   (debug #:from 'progress #:depth 3 "picking best candidate")
-  (choose-best-alt!)
-  (debug #:from 'progress #:depth 3 "localizing error")
-  (localize!)
-  (debug #:from 'progress #:depth 3 "generating rewritten candidates")
-  (gen-rewrites!)
-  (debug #:from 'progress #:depth 3 "generating series expansions")
-  (gen-series!)
-  (debug #:from 'progress #:depth 3 "simplifying candidates")
-  (simplify!)
-  (debug #:from 'progress #:depth 3 "adding candidates to table")
+  (^children^ ; run on multiple alts
+    (for/fold ([children '()]) ([altn (choose-mult-alts)] [i (in-naturals 1)]) 
+      (define picking-func (λ (x) (for/first ([v x] #:when (alt-equal? v altn)) v)))
+      (define-values (picked table*)
+        (atab-pick-alt (^table^) #:picking-func picking-func #:only-fresh #t))
+      (^next-alt^ picked)
+      (^table^ table*)
+      (debug #:from 'pick #:depth 4 (format "Picked [~a]: " i) picked)
+      (debug #:from 'progress #:depth 3 "localizing error")
+      (localize!)
+      (debug #:from 'progress #:depth 3 "generating rewritten candidates")
+      (gen-rewrites!)
+      (debug #:from 'progress #:depth 3 "generating series expansions")
+      (gen-series!)
+      (debug #:from 'progress #:depth 3 "simplifying candidates")
+      (simplify!)
+      (debug #:from 'progress #:depth 3 "adding candidates to table")
+      (let ([children (append children (^children^))])
+        (rollback-iter!)
+        children)))
   (finalize-iter!))
 
 (define (run-improve prog iters

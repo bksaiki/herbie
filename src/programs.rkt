@@ -16,7 +16,7 @@
          batch-eval-progs eval-prog eval-application
          free-variables replace-expression
          desugar-program resugar-program
-         apply-repr-change)
+         apply-repr-change program-has-nan?)
 
 (define expr? (or/c list? symbol? value? real?))
 
@@ -514,3 +514,12 @@
 (define (apply-repr-change prog)
   (match-define (list (and (or 'λ 'lambda) lam) (list args ...) body) prog)
   `(,lam ,args ,(apply-repr-change-expr body)))
+
+(define (program-has-nan? prog)
+  (match-define (list (and (or 'λ 'lambda) lam) (list args ...) body) prog)
+  (let loop ([expr body])
+    (match expr
+     [(list op args ...) (ormap loop args)]
+     [(? (curry hash-has-key? parametric-constants-reverse))
+      (equal? (hash-ref parametric-constants-reverse expr) 'NAN)]
+     [_ #f])))
