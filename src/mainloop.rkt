@@ -150,12 +150,14 @@
     (list best)]
    [(< (length altns) 5)  ; best, cheapest
     (define simplest (argmin alt-cost altns))
-    (list best simplest)]
+    (if (alt-equal? best simplest)
+        (list best)
+        (list best simplest))]
    [else
     (define simplest (argmin alt-cost altns))
     (define pred (λ (x) (or (alt-equal? x best) (alt-equal? x simplest))))
     (append
-      (list best simplest)
+      (if (alt-equal? best simplest) (list best) (list best simplest))
       (let loop ([altns (filter-not pred altns)] [fuel 3])
         (if (zero? fuel)
             '()
@@ -420,7 +422,7 @@
                       "Run (finish-iter!) to finish it, or (rollback-iter!) to abandon it.\n"))
   (debug #:from 'progress #:depth 3 "picking best candidate")
   (^children^ ; run on multiple alts
-    (for/fold ([children '()]) ([altn (choose-mult-alts)] [i (in-naturals 1)]) 
+    (for/fold ([children '()]) ([altn (choose-mult-alts)] [i (in-naturals 1)])
       (define picking-func (λ (x) (for/first ([v x] #:when (alt-equal? v altn)) v)))
       (define-values (picked table*)
         (atab-pick-alt (^table^) #:picking-func picking-func #:only-fresh #t))
@@ -463,28 +465,40 @@
   (debug #:from 'progress #:depth 1 "[Phase 3 of 3] Extracting.")
   (extract!))
 
-(define (final-simplify altn)
-  (alt `(λ ,(program-variables (alt-program altn))
-           ,(simplify-expr (program-body (alt-program altn))
-                           #:rules (*fp-safe-simplify-rules*)))
-        'final-simplify (list altn)))
-
 (define (extract!)
   (define repr (*output-repr*))
   (define all-alts (atab-all-alts (^table^)))
-  (*all-alts* all-alts)
+
+  ;; de-dup using fp-safe transformations
+  (timeline-event! 'simplify)
+  (define progs (simplify-batch (map (compose program-body alt-program) all-alts)
+                                #:rules (*fp-safe-simplify-rules*) #:precompute #t))
+  (define reduced-alts
+    (sort (remove-duplicates
+            (for/list ([altn all-alts] [prog progs])
+              (alt `(λ ,(program-variables (alt-program altn)) ,prog) `(simplify (2)) (list altn)))
+            alt-equal?)
+          > #:key alt-cost))
+  (*all-alts* reduced-alts)
+
+  ;; Regimes
   (define final-alts
     (cond
-     [(and (flag-set? 'reduce 'regimes) (> (length all-alts) 1)
+     [(and (flag-set? 'reduce 'regimes) (> (length reduced-alts) 1)
            (equal? (type-name (representation-type repr)) 'real)
-           (not (null? (program-variables (alt-program (car all-alts))))))
-      (compute-regimes all-alts repr (*sampler*))]
+           (not (null? (program-variables (alt-program (car reduced-alts))))))
+      (compute-regimes reduced-alts repr (*sampler*))]
      [else
-      (list (argmin score-alt all-alts))]))
+      (list (argmin score-alt reduced-alts))]))
+
+  ;; Clean up, de-dup
   (timeline-event! 'simplify)
+  (define progs* (simplify-batch (map (compose program-body alt-program) final-alts)
+                                 #:rules (*fp-safe-simplify-rules*) #:precompute #t))
   (define cleaned-alts
-    (cons (final-simplify (car final-alts))
-          (parameterize ([*timeline-disabled* true])
-            (map final-simplify (cdr final-alts)))))
+    (for/list ([altn final-alts] [prog progs*])
+      (alt `(λ ,(program-variables (alt-program altn)) ,prog) 'final-simplify (list altn))))
   (timeline-event! 'end)
-  (remove-duplicates cleaned-alts alt-equal?))
+  (define best (car cleaned-alts)) ; Remove duplicates
+  (define rest (remove-duplicates (cdr cleaned-alts) alt-equal?))
+  (cons best (filter-not (curry alt-equal? best) rest)))

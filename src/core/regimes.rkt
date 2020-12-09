@@ -30,20 +30,37 @@
 ;; pidx = Point index: The index of the point to the left of which we should split.
 (struct si (cidx pidx) #:prefab)
 
-(define (compute-regimes alts repr sampler)
-  (define sorted (sort alts > #:key alt-cost))
-  (let loop ([alts sorted] [n 0])
-    (cond
-    [(null? alts) '()]
-    [(= (length alts) 1) (list (car alts))]
-    [else
-      (parameterize ([*timeline-disabled* (positive? n)])
+;; Turning this on makes compute-regimes produce many more alternatives that
+;; may have similar accuracy. Significantly increases runtime (~3-5 times slower)
+(define *regimes-sorted-high-low* (make-parameter #f))
+
+(define (alt-score alt)
+  (errors-score (errors (alt-program alt) (*pcontext*) (*output-repr*))))
+
+(define (compute-regimes sorted repr sampler)
+  (define order-alts (if (*regimes-sorted-high-low*) identity reverse))
+  (define all-alts
+    (let loop ([alts sorted] [idx 0])
+      (debug "Computing regimes starting at alt" idx "of" (length sorted) #:from 'regime #:depth 2)
+      (cond
+       [(null? alts) '()]
+       [(= (length alts) 1) (list (car alts))]
+       [else
         (timeline-event! 'regimes)
-        (define opt (infer-splitpoints alts repr))
+        (define opt (infer-splitpoints (order-alts alts) repr))
         (timeline-event! 'bsearch)
         (define branched-alt (combine-alts opt repr sampler))
         (define high (si-cidx (argmin (λ (x) (si-cidx x)) (option-split-indices opt))))
-        (cons branched-alt (loop (drop alts (+ high 1)) (+ n 1))))])))
+        (cons branched-alt (loop (drop alts (+ high 1)) (+ idx high 1)))])))
+
+  ; Put the simplest of the best alts in front
+  (define scores (map alt-score all-alts))
+  (define best-score (argmin identity scores))
+  (define tied (for/list ([altn all-alts] [score scores]
+                          #:when (= score best-score))
+                  altn))
+  (define best-alt (argmin alt-cost tied))
+  (cons best-alt (filter-not (curry alt-equal? best-alt) all-alts)))
       
 ;; `infer-splitpoints` and `combine-alts` are split so the mainloop
 ;; can insert a timeline break between them.
