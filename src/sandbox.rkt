@@ -16,8 +16,8 @@
 (struct test-result (test bits time timeline warnings))
 (struct test-success test-result
   (start-alt end-alt points exacts start-est-error end-est-error
-   newpoints newexacts start-error end-error target-error
-   baseline-error oracle-error other-alts other-errors all-alts costs))
+   newpoints newexacts start-error end-error target-error baseline-error oracle-error
+   other-alts other-errors costs times all-alts))
 (struct test-failure test-result (exn))
 (struct test-timeout test-result ())
 
@@ -72,58 +72,60 @@
         (debug #:from 'pareto-measure #:depth 1
                "Pareto frontier hypervolume metric: " pareto-m)
 
-        (define best-alt (car alts))
-        (define other-alts (cdr alts))
         (define fns
           (map (λ (alt) (eval-prog (alt-program alt) 'fl output-repr))
                (remove-duplicates (*all-alts*))))
 
-        (define end-errs (errors (alt-program best-alt) newcontext output-repr))
+        (define errs (map (λ (alt) (errors (alt-program alt) newcontext output-repr)) alts))
         (define baseline-errs (baseline-error fns context newcontext output-repr))
         (define oracle-errs (oracle-error fns newcontext output-repr))
 
         (timeline-adjust! 'regimes 'oracle (errors-score oracle-errs))
-        (timeline-adjust! 'regimes 'accuracy (errors-score end-errs))
+        (timeline-adjust! 'regimes 'accuracy (errors-score (car errs)))
         (timeline-adjust! 'regimes 'baseline (errors-score baseline-errs))
         (timeline-adjust! 'regimes 'name (test-name test))
         (timeline-adjust! 'regimes 'link ".")
 
         (debug #:from 'regime-testing #:depth 1
-               "End program error score:" (errors-score end-errs))
+               "End program error score:" (errors-score (car errs)))
         (when (test-output test)
           (debug #:from 'regime-testing #:depth 1
                  "Target error score:" (errors-score
                                          (errors (test-target test) newcontext output-repr))))
 
-        (define other-errs (map (λ (alt) (errors (alt-program alt) newcontext output-repr)) other-alts))
-        (unless (null? other-errs)
-          (for ([errs other-errs] [alt other-alts])
+        (unless (null? (cdr errs))
+          (for ([errs (cdr errs)] [alt (cdr alts)])
             (debug #:from 'regime-testing #:depth 1
                    "Alternate end program score: "
                    (errors-score errs) " for " (alt-program alt))))
 
+
         (define-values (points exacts) (get-p&es context))
         (define-values (newpoints newexacts) (get-p&es newcontext))
         (define costs (map alt-cost alts))
+        (define times
+          (for/list ([alt alts])
+            (let ([prog (eval-prog (alt-program alt) 'fl output-repr)]
+                  [t0 (current-inexact-milliseconds)])
+              (for* ([i (in-range 5)] [pnt newpoints]) (apply prog pnt))
+              (/ (- (current-inexact-milliseconds) t0) (*reeval-pts*)))))
 
         (test-success test
                       (bf-precision)
                       (- (current-inexact-milliseconds) start-time)
                       (timeline-extract output-repr)
-                      warning-log (make-alt (test-program test)) best-alt points exacts
+                      warning-log (make-alt (test-program test)) (car alts) points exacts
                       (errors (test-program test) context output-repr)
-                      (errors (alt-program best-alt) context output-repr)
+                      (errors (alt-program (car alts)) context output-repr)
                       newpoints newexacts
                       (errors (test-program test) newcontext output-repr)
-                      end-errs
+                      (car errs)
                       (if (test-output test)
                           (errors (test-target test) newcontext output-repr)
                           #f)
-                      baseline-errs
-                      oracle-errs
-                      other-alts other-errs
-                      (*all-alts*)
-                      costs))))
+                      baseline-errs oracle-errs
+                      (cdr alts) (cdr errs)
+                      costs times (*all-alts*)))))
 
   (define (on-exception start-time e)
     (parameterize ([*timeline-disabled* false])
@@ -160,7 +162,7 @@
              (resugar-program (test-spec test) repr)
              (and (test-output test) (resugar-program (test-output test) repr))
              #f #f #f #f #f (test-result-time result)
-             (test-result-bits result) link))
+             (test-result-bits result) link '()))
 
 (define (get-table-data result link)
   (define test (test-result-test result))
@@ -177,6 +179,8 @@
     (define target-score (and target-errors (errors-score target-errors)))
     (define est-start-score (errors-score (test-success-start-est-error result)))
     (define est-end-score (errors-score (test-success-end-est-error result)))
+    (define costs (test-success-costs result))
+    (define times (test-success-times result))
 
     (define status
       (if target-score
@@ -197,7 +201,8 @@
                            (program-body (alt-program (test-success-end-alt result)))
                            (test-output-repr test))]
                  [start start-score] [result end-score] [target target-score]
-                 [start-est est-start-score] [result-est est-end-score])]
+                 [start-est est-start-score] [result-est est-end-score]
+                 [cost&time (cons costs times)])]
    [(test-failure? result)
     (define status (if (exn:fail:user:herbie? (test-failure-exn result)) "error" "crash"))
     (dummy-table-row result status link)]

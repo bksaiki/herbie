@@ -6,7 +6,7 @@
          "../alternative.rkt" "../interface.rkt" "../syntax/read.rkt" "../core/regimes.rkt" 
          "../sandbox.rkt")
 
-(provide make-axis-plot make-points-plot)
+(provide make-axis-plot make-points-plot make-cost-scatter-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -326,6 +326,32 @@
    repr
    (error-points err pts repr #:axis idx #:color theme)
    (error-avg err pts repr #:axis idx #:color theme)))
+
+(define (make-cost-scatter-plot result out)
+  (define-values (costs times)
+    (if (test-success? result)
+        (values (test-success-costs result) (test-success-times result))
+        (values (car result) (cdr result))))
+  (define x-max (argmax identity costs))
+  (define x-min (argmin identity costs))
+  (define y-min (argmin identity times))
+  (define y-max (argmax identity times))
+
+  (parameterize ([plot-width 800] [plot-height 300]
+                 [plot-background-alpha 0]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-font-size 10]
+                 [plot-y-label "Time (ms)"])
+    (plot-file (list (points (map vector costs times) #:sym 'fullcircle4 #:fill-color "lightblue")
+                     (y-tick-lines))
+               out 'png
+               #:x-min 0 #:x-max (+ x-min x-max)
+               #:y-min 0 #:y-max (+ y-min y-max))))
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)
   (define best-alt-point-renderers (best-alt-points point-alt-idxs alt-idxs))

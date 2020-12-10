@@ -53,7 +53,7 @@
                  start-alt end-alt points exacts start-est-error end-est-error
                  newpoints newexacts start-error end-error target-error
                  baseline-error oracle-error other-alts other-errors
-                 all-alts costs)
+                 costs times all-alts)
    result)
   (define repr (test-output-repr test))
 
@@ -144,19 +144,24 @@
                                          "\\]"))
            "")
 
-        ,@(for/list ([alt other-alts] [cost (cdr costs)] [errs other-errors] [idx (in-naturals 1)])
-            (define name (format "Alternative ~a" idx))
-            `(section ([id "alternatives"] [style "margin: 2em 0;"])
-              ,(if (= idx 1) `(h1 "Alternatives") "")
-              (table
-                (tr (th ([style "font-weight:bold"]) ,name))
-                (tr (th "Accuracy") (td ,(format-bits (errors-score errs))))
-                (tr (th "Cost") (td ,(format-bits cost))))
-              (div ([class "math"]) "\\[" ,(core->tex
-                                            (program->fpcore
-                                              (resugar-program (alt-program alt) repr)))
-                                         "\\]")))
-
+      ,@(for/list ([alt other-alts] [cost (cdr costs)] [errs other-errors] [idx (in-naturals 1)])
+          (define name (format "Alternative ~a" idx))
+          `(section ([id "alternatives"] [style "margin: 2em 0;"])
+            ,(if (= idx 1) `(h1 "Alternatives") "")
+            (table
+              (tr (th ([style "font-weight:bold"]) ,name))
+              (tr (th "Accuracy") (td ,(format-bits (errors-score errs))))
+              (tr (th "Cost") (td ,(format-bits cost))))
+            (div ([class "math"]) "\\[" ,(core->tex
+                                          (program->fpcore
+                                            (resugar-program (alt-program alt) repr)))
+                                        "\\]")))
+      
+      ,(if (not (null? other-alts))
+           `(img ([width "800"] [height "300"] [title "cost-scatter"]
+                  [data-name "Cost Scatter"] [src "cost-scatter.png"]))
+            "")
+                                  
       (section ([id "history"])
        (h1 "Derivation")
        (ol ([class "history"])

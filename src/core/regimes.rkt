@@ -32,7 +32,7 @@
 
 ;; Turning this on makes compute-regimes produce many more alternatives that
 ;; may have similar accuracy. Significantly increases runtime (~3-5 times slower)
-(define *regimes-sorted-high-low* (make-parameter #f))
+(define *regimes-sorted-high-low* (make-parameter #t))
 
 (define (alt-score alt)
   (errors-score (errors (alt-program alt) (*pcontext*) (*output-repr*))))
@@ -41,7 +41,8 @@
   (define order-alts (if (*regimes-sorted-high-low*) identity reverse))
   (define all-alts
     (let loop ([alts sorted] [idx 0])
-      (debug "Computing regimes starting at alt" idx "of" (length sorted) #:from 'regime #:depth 2)
+      (debug "Computing regimes starting at alt" (+ idx 1) "of"
+             (length sorted) #:from 'regime #:depth 2)
       (cond
        [(null? alts) '()]
        [(= (length alts) 1) (list (car alts))]

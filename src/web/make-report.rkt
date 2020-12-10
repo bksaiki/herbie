@@ -1,7 +1,7 @@
 #lang racket
 
 (require (only-in xml write-xexpr))
-(require "../common.rkt" "../datafile.rkt" "common.rkt")
+(require "../common.rkt" "../datafile.rkt" "../sandbox.rkt" "common.rkt" "plot.rkt")
 
 (provide make-report-page)
 
@@ -12,8 +12,19 @@
     ["timeout" "TIME"]
     [_ (format-bits (- (table-row-start result) (table-row-result result)) #:sign #t)]))
 
-(define (make-report-page out info)
+(define (make-report-page out info dir)
   (match-define (report-info date commit branch hostname seed flags points iterations note tests) info)
+
+  (define-values (costs times)
+    (for/fold ([costs '()] [times '()]) ([test tests])
+      (let ([ct (table-row-cost&time test)])
+        (values (append (car ct) costs) (append (cdr ct) times)))))
+
+  (if (> (length costs) 1) ; generate the scatterplot if necessary
+      (call-with-output-file (build-path dir "scatterplot.png")
+        (λ (out) (make-cost-scatter-plot (cons costs times) out)) #:exists 'replace)
+      (when (file-exists? (build-path dir "scatterplot.png"))
+        (delete-file (build-path dir "scatterplot.png"))))
 
   (define table-labels
     '("Test" "Start" "Result" "Target" "Time"))
@@ -109,5 +120,10 @@
                        (a ((id ,(format "link~a" id))
                            (href ,(format "~a/graph.html" (table-row-link result))))
                           "»"))
-                     "")))))))
+                     "")))))
+      ,(if (> (length costs) 1)
+          `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
+             (img ([width "800"] [height "300"] [title "cost-scatter"]
+                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
+           "")))
    out))
