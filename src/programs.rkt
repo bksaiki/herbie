@@ -9,7 +9,7 @@
          program-body program-variables
          program-cost expr-cost
          type-of repr-of
-         expr-supports?
+         expr-supports? expr-contains?
          location-hash
          location? expr?
          location-do location-get location-repr
@@ -457,6 +457,12 @@
       [(? variable?) true]
       [(? constant?) (or (not (symbol? expr)) (constant-info expr field))])))
 
+(define (expr-contains? expr pred)
+  (let loop ([expr expr])
+    (match expr
+     [(list elems ...) (ormap loop elems)]
+     [term (pred term)])))
+
 ; Updates the repr of an expression if needed
 (define (apply-repr-change-expr expr)
   (let loop ([expr expr] [prec #f])
@@ -468,13 +474,18 @@
       (define body* (loop body iprec))
       (cond
        [(not body*) #f] ; propagate failed repr-change
-       [(equal? iprec prec*) body*] ; remove non-conversions
        [else
         (define new-conv (get-repr-conv iprec prec*)) ; try to find a single conversion
         (if new-conv
             (list new-conv body*)
             (let ([second-conv (get-repr-conv oprec prec*)]) ; try a two-step conversion
               (and second-conv (list second-conv (list op body*)))))])]
+     [(list (? rewrite-repr-op? rr) (list (? repr-conv? op) body))  ; repr change on a conversion
+      (define iprec (first (operator-info op 'itype)))
+      (define prec* (operator-info rr 'otype))
+      (if (equal? prec* iprec)
+          (loop body iprec) ; if the conversions are inverses
+          (loop (list op body) prec*))] 
      [(list (? rewrite-repr-op? op) body)
       (define prec* (operator-info op 'otype))
       (if prec

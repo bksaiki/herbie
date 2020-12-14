@@ -16,7 +16,8 @@
   (match-define (report-info date commit branch hostname seed flags points iterations note tests) info)
 
   (define-values (costs times)
-    (for/fold ([costs '()] [times '()]) ([test tests])
+    (for/fold ([costs '()] [times '()]) ([test tests]
+              #:unless (null? (table-row-cost&time test)))
       (let ([ct (table-row-cost&time test)])
         (values (append (car ct) costs) (append (cdr ct) times)))))
 
