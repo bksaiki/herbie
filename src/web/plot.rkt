@@ -6,7 +6,7 @@
          "../alternative.rkt" "../interface.rkt" "../syntax/read.rkt" "../core/regimes.rkt" 
          "../sandbox.rkt")
 
-(provide make-axis-plot make-points-plot make-cost-scatter-plot)
+(provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -329,7 +329,7 @@
 
 (define (make-cost-scatter-plot result out)
   (define-values (costs times)
-    (if (test-success? result)
+    (if (test-success? result) ; may be a test-success or two lists
         (values (test-success-costs result) (test-success-times result))
         (values (car result) (cdr result))))
   (define x-max (argmax identity costs))
@@ -339,19 +339,54 @@
 
   (parameterize ([plot-width 800] [plot-height 300]
                  [plot-background-alpha 0]
+                 [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost"]
                  [plot-x-far-axis? #t]
                  [plot-x-far-ticks no-ticks]
+                 [plot-y-ticks (linear-ticks #:number 9)]
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
-                 [plot-font-size 10]
                  [plot-y-label "Time (ms)"])
-    (plot-file (list (points (map vector costs times) #:sym 'fullcircle4 #:fill-color "lightblue")
-                     (y-tick-lines))
+    (define pnts (points (map vector costs times)
+                         #:sym 'fullcircle4
+                         #:fill-color "lightblue"))
+    (plot-file (list pnts (y-tick-lines))
                out 'png
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max (+ y-min y-max))))
+
+(define (make-cost-accuracy-plot result out)
+  (define costs (test-success-costs result))
+  (define errs
+    (cons (errors-score (test-success-end-error result))
+          (map errors-score (test-success-other-errors result))))
+  (define repr (test-output-repr (test-result-test result)))
+
+  (define x-max (argmax identity costs))
+  (define x-min (argmin identity costs))
+  (define y-min (argmin identity errs))
+  (define y-max (argmax identity errs))
+
+  (parameterize ([plot-width 800] [plot-height 300]
+                 [plot-background-alpha 0]
+                 [plot-font-size 10]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-ticks (linear-ticks #:number 9 #:base 32 #:divisors '(2 4 8))]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-y-label "Error (bits)"])
+    (define pnts (points (map vector costs errs)
+                         #:sym 'fullcircle4
+                         #:fill-color "red"))
+    (plot-file (list pnts (y-tick-lines))
+               out 'png
+               #:x-min 0 #:x-max (+ x-min x-max)
+               #:y-min 0 #:y-max (representation-total-bits repr))))
+
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)
   (define best-alt-point-renderers (best-alt-points point-alt-idxs alt-idxs))

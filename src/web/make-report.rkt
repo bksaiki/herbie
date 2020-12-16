@@ -122,9 +122,12 @@
                            (href ,(format "~a/graph.html" (table-row-link result))))
                           "»"))
                      "")))))
-      ,(if (> (length costs) 1)
-          `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
-             (img ([width "800"] [height "300"] [title "cost-scatter"]
-                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
-           "")))
+
+; Main scatterplot
+;      ,(if (> (length costs) 1)
+;         `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
+;             (img ([width "800"] [height "300"] [title "cost-scatter"]
+;                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
+;           "")))
+
    out))

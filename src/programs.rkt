@@ -484,15 +484,20 @@
       (define iprec (first (operator-info op 'itype)))
       (define prec* (operator-info rr 'otype))
       (if (equal? prec* iprec)
-          (loop body iprec) ; if the conversions are inverses
-          (loop (list op body) prec*))] 
-     [(list (? rewrite-repr-op? op) body)
-      (define prec* (operator-info op 'otype))
       (if prec
-          (loop body prec*)
+              (loop body iprec) ; if the conversions are inverses and not the top
+              (list op (loop body iprec)))
+          (if prec
+              (loop (list op body) prec*)
           (let* ([conv (get-repr-conv prec* (representation-name (*output-repr*)))]
                  [body* (loop body prec*)])
-            (and conv body* (list conv body*))))]
+                (and conv body* (list conv body*)))))]
+     [(list (? rewrite-repr-op? op) body)
+      (define iprec (operator-info op 'otype))
+      (define oprec (if prec prec (representation-name (*output-repr*))))
+      (define conv (get-repr-conv iprec oprec))
+      (define body* (loop body iprec))
+      (and conv body* (list conv body*))]
      [(list (? operator? op) args ...) 
       (define prec* (if prec prec (operator-info op 'otype)))
       (if (equal? (operator-info op 'otype) prec*)

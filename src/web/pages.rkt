@@ -27,6 +27,7 @@
                    ;; Don't generate a plot with only one X value else plotting throws an exception
                    #:when (> (unique-values (test-success-newpoints result) idx) 1))
           (format "plot-~a~a.png" idx type))
+      ,(and good? (not (null? (test-success-other-alts result))) "cost-accuracy.png")
       ,(and good? (not (null? (test-success-other-alts result))) "cost-scatter.png")))
   (filter identity pages))
 
@@ -51,6 +52,8 @@
      (make-timeline (test-name test) (test-result-timeline result) out)]
     ["timeline.json"
      (write-json (test-result-timeline result) out)]
+    ["cost-accuracy.png"
+     (make-cost-accuracy-plot result out)]
     ["cost-scatter.png"
      (make-cost-scatter-plot result out)]
     [(regexp #rx"^plot-([0-9]+).png$" (list _ idx))

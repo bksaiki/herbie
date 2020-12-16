@@ -156,10 +156,19 @@
                                           (program->fpcore
                                             (resugar-program (alt-program alt) repr)))
                                         "\\]")))
+
+      ,(if (not (null? other-alts))
+          `(section ([id "cost-accuracy"])
+            (h1 "Error")
+            (img ([width "800"] [height "300"] [title "cost-accuracy"]
+                  [data-name "Cost Accuracy"] [src "cost-accuracy.png"])))
+            "")
       
       ,(if (not (null? other-alts))
-           `(img ([width "800"] [height "300"] [title "cost-scatter"]
-                  [data-name "Cost Scatter"] [src "cost-scatter.png"]))
+          `(section ([id "cost-time"])
+            (h1 "Time")
+            (img ([width "800"] [height "300"] [title "cost-scatter"]
+                  [data-name "Cost Scatter"] [src "cost-scatter.png"])))
             "")
                                   
       (section ([id "history"])
