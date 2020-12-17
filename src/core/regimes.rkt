@@ -30,8 +30,7 @@
 ;; pidx = Point index: The index of the point to the left of which we should split.
 (struct si (cidx pidx) #:prefab)
 
-;; Turning this on makes compute-regimes produce many more alternatives that
-;; may have similar accuracy. Significantly increases runtime (~3-5 times slower)
+;; Sorts regimes differently
 (define *regimes-sorted-high-low* (make-parameter #t))
 
 (define (alt-score alt)

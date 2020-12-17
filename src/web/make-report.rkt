@@ -129,5 +129,6 @@
 ;             (img ([width "800"] [height "300"] [title "cost-scatter"]
 ;                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
 ;           "")))
+     ))
 
    out))
