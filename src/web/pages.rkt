@@ -27,8 +27,8 @@
                    ;; Don't generate a plot with only one X value else plotting throws an exception
                    #:when (> (unique-values (test-success-newpoints result) idx) 1))
           (format "plot-~a~a.png" idx type))
-      ,(and good? (not (null? (test-success-other-alts result))) "cost-accuracy.png")
-      ,(and good? (not (null? (test-success-other-alts result))) "cost-scatter.png")))
+      ,(and good? (not (null? (test-success-other-alts result))) "cost-accuracy.png")))
+     ; ,(and good? (not (null? (test-success-other-alts result))) "cost-scatter.png")))
   (filter identity pages))
 
 (define ((page-error-handler result page) e)

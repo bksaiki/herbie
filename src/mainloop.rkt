@@ -156,9 +156,9 @@
     (define div-size (round (/ (length altns**) 4)))
     (list best
           simplest
-          (list-ref altns** div-size)
-          (list-ref altns** (* 2 div-size))
-          (list-ref altns** (* 3 div-size)))]))
+          (list-ref altns** (- div-size 1))
+          (list-ref altns** (- (* 2 div-size) 1))
+          (list-ref altns** (- (* 3 div-size) 1)))]))
 
 ;; Invoke the subsystems individually
 (define (localize!)

@@ -67,10 +67,10 @@
           (parameterize ([*num-points* (*reeval-pts*)])
             (prepare-points (test-specification test) (test-precondition test) output-repr (*sampler*))))
 
-        (define pareto-m (pareto-measure alts newcontext output-repr))
+        (define pareto-m (pareto-measure-alts alts newcontext output-repr))
         (timeline-push! 'other (list "Pareto" pareto-m))
         (debug #:from 'pareto-measure #:depth 1
-               "Pareto frontier hypervolume metric: " pareto-m)
+               "Pareto frontier area: " pareto-m)
 
         (define fns
           (map (λ (alt) (eval-prog (alt-program alt) 'fl output-repr))
@@ -162,7 +162,7 @@
              (resugar-program (test-spec test) repr)
              (and (test-output test) (resugar-program (test-output test) repr))
              #f #f #f #f #f (test-result-time result)
-             (test-result-bits result) link '()))
+             (test-result-bits result) link '() '()))
 
 (define (get-table-data result link)
   (define test (test-result-test result))
@@ -170,6 +170,7 @@
   (cond
    [(test-success? result)
     (define name (test-name test))
+    (define repr (test-output-repr test))
     (define start-errors  (test-success-start-error  result))
     (define end-errors    (test-success-end-error    result))
     (define target-errors (test-success-target-error result))
@@ -181,6 +182,9 @@
     (define est-end-score (errors-score (test-success-end-est-error result)))
     (define costs (test-success-costs result))
     (define times (test-success-times result))
+    (define accuracy 
+      (map (curry - (representation-total-bits repr))
+           (cons end-score (map errors-score (test-success-other-errors result)))))
 
     (define status
       (if target-score
@@ -202,7 +206,8 @@
                            (test-output-repr test))]
                  [start start-score] [result end-score] [target target-score]
                  [start-est est-start-score] [result-est est-end-score]
-                 [cost&time (cons costs times)])]
+                 [cost&time (cons costs times)]
+                 [cost&accuracy (map cons costs accuracy)])]
    [(test-failure? result)
     (define status (if (exn:fail:user:herbie? (test-failure-exn result)) "error" "crash"))
     (dummy-table-row result status link)]

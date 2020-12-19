@@ -164,12 +164,12 @@
                   [data-name "Cost Accuracy"] [src "cost-accuracy.png"])))
             "")
       
-      ,(if (not (null? other-alts))
-          `(section ([id "cost-time"])
-            (h1 "Time")
-            (img ([width "800"] [height "300"] [title "cost-scatter"]
-                  [data-name "Cost Scatter"] [src "cost-scatter.png"])))
-            "")
+      ;,(if (not (null? other-alts))
+      ;    `(section ([id "cost-time"])
+      ;      (h1 "Time")
+      ;      (img ([width "800"] [height "300"] [title "cost-scatter"]
+      ;            [data-name "Cost Scatter"] [src "cost-scatter.png"])))
+      ;      "")
                                   
       (section ([id "history"])
        (h1 "Derivation")

@@ -1,7 +1,8 @@
 #lang racket
 
 (require (only-in xml write-xexpr))
-(require "../common.rkt" "../datafile.rkt" "../sandbox.rkt" "common.rkt" "plot.rkt")
+(require "../common.rkt" "../datafile.rkt" "../pareto.rkt" "../sandbox.rkt"
+         "common.rkt" "plot.rkt")
 
 (provide make-report-page)
 
@@ -21,11 +22,20 @@
       (let ([ct (table-row-cost&time test)])
         (values (append (car ct) costs) (append (cdr ct) times)))))
 
+
+  ;(if (> (length costs) 1) ; generate the scatterplot if necessary
+  ;    (call-with-output-file (build-path dir "scatterplot.png")
+  ;      (λ (out) (make-cost-scatter-plot (cons costs times) out)) #:exists 'replace)
+  ;    (when (file-exists? (build-path dir "scatterplot.png"))
+  ;      (delete-file (build-path dir "scatterplot.png"))))
+
+  (define cost&accuracy (map table-row-cost&accuracy tests))
+  (define pareto-points (compute-pareto-curve cost&accuracy))
   (if (> (length costs) 1) ; generate the scatterplot if necessary
-      (call-with-output-file (build-path dir "scatterplot.png")
-        (λ (out) (make-cost-scatter-plot (cons costs times) out)) #:exists 'replace)
-      (when (file-exists? (build-path dir "scatterplot.png"))
-        (delete-file (build-path dir "scatterplot.png"))))
+      (call-with-output-file (build-path dir "cost-accuracy.png")
+        (λ (out) (make-alt-cost-accuracy-plot pareto-points out)) #:exists 'replace)
+      (when (file-exists? (build-path dir "cost-accuracy.png"))
+        (delete-file (build-path dir "cost-accuracy.png"))))
 
   (define table-labels
     '("Test" "Start" "Result" "Target" "Time"))
@@ -129,6 +139,11 @@
 ;             (img ([width "800"] [height "300"] [title "cost-scatter"]
 ;                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
 ;           "")))
-     ))
-
+      ; Cost accuracy scatter
+      ,(if (> (length costs) 1)
+         `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
+             (img ([width "800"] [height "300"] [title "cost-accuracy"]
+                   [data-name "Cost Accuracy"] [src "cost-accuracy.png"]))
+             (p ,(format "Pareto measure: ~a" (pareto-measure-pnts pareto-points))))
+           "")))
    out))
