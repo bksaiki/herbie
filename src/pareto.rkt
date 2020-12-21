@@ -14,7 +14,7 @@
         (> (cdr elem1) (cdr elem2))
         (< c1 c2))))
 
-; Accepts a (sorted) list of points, returns the area under a curve above the line
+; Accepts a (sorted) list of points, returns the area under a curve and above the line
 ; between (x-min, y-min) and (y-min, y-max).
 (define (pareto-area pts)
   (match-define (list (cons xs ys) ...) pts)
@@ -61,14 +61,25 @@
   (define pnts* (sort pnts paired-less?))
   (pareto-area pnts*))
 
-(define *num-pareto-points* (make-parameter 100))
-
 ; This is really dumb
-(define (brute-force-sums pts*)
-  (define comb (apply cartesian-product pts*))
-  (for/list ([pt comb])
-    (cons (apply + (map car pt))
-          (apply + (map cdr pt)))))
+(define (brute-force-sums pts)
+  (let loop ([pts pts] [h (make-hash `((0 . 0)))]) ; keep a hash of costs and partial sums
+    (cond
+     [(null? pts) h]
+     [else
+      (define h* (make-hash))
+      (for* ([(x y) (in-hash h)] [pt (car pts)])  ; make a new hash: h + pts, dedup by taking max
+        (hash-update! h* (+ x (car pt))
+                      (λ (x) (max x (+ y (cdr pt))))
+                      (+ y (cdr pt))))
+      (for/fold ([best 0]) ([x (sort (hash-keys h*) <)]) 
+        (let ([y (hash-ref h* x)])  ; as cost increases, the sums must increase, remove decreased points
+          (cond
+           [(> y best) y]
+           [else
+            (hash-remove! h* x)
+            best])))
+      (loop (cdr pts) h*)])))
 
 ; Create a pareto curve across tests
 (define (compute-pareto-curve pts)
@@ -76,19 +87,13 @@
    [(null? pts) '()]
    [else
     (define pts* (map (curryr sort paired-less?) pts))
-    (define sums (sort (brute-force-sums pts*) > #:key car))
-    (define h (make-hash))
-    (for ([sum sums])
-      (hash-update! h (car sum) (λ (x) (cons (cdr sum) x)) (list (cdr sum))))
-    (for/fold ([res '()] [last 0] #:result res)
-              ([cost (sort (hash-keys h) <)])
-      (let ([best (argmax identity (hash-ref h cost))])
-        (cond [(> best last) (values (cons (cons cost best) res) best)]
-              [else (values (cons (cons cost last) res) last)])))]))
+    (define coords (hash->list (brute-force-sums pts*)))
+    (sort coords < #:key car)]))
 
 (module+ test
-  (define pts `(((1 . 2) (2 . 3) (3 . 4))
-                ((3 . 3) (4 . 4) (5 . 5))
-                ((2 . 1) (4 . 3) (6 . 5))))
+  (define pts
+    (for/list ([k (in-range 1 100)])
+      (for/list ([n (in-range 1 1000 10)])
+        (cons (+ k n) (* k n)))))
   (define pareto (compute-pareto-curve pts))
-  (displayln pareto))
+  (pareto-measure pareto))
