@@ -57,9 +57,12 @@
     (pareto-area paired*)]))
 
 ; Measure the area under the pareto curve (unsorted points)
-(define (pareto-measure-pnts pnts)  
-  (define pnts* (sort pnts paired-less?))
-  (pareto-area pnts*))
+(define (pareto-measure-pnts pnts) 
+  (cond
+   [(< (length pnts) 2) 0]
+   [else
+    (define pnts* (sort pnts paired-less?))
+    (pareto-area pnts*)]))
 
 ; This is really dumb
 (define (brute-force-sums pts)
@@ -96,4 +99,4 @@
       (for/list ([n (in-range 1 1000 10)])
         (cons (+ k n) (* k n)))))
   (define pareto (compute-pareto-curve pts))
-  (pareto-measure pareto))
+  (pareto-measure-pnts pareto))

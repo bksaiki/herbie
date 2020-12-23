@@ -63,16 +63,23 @@
           "unused ~a ~a" (if (equal? (set-count unused) 1) "variable" "variables")
           (string-join (map ~a unused) ", "))))
 
-(define (alts-for-every-repr altn)
+;; Iteration 0 alts (original alt in every repr, constant alts, etc.)
+(define (starting-alts altn)
   (define prec (representation-name (*output-repr*)))
-  (filter (λ (altn) (program-body (alt-program altn)))
-    (for/list ([(k v) (in-hash (*conversions*))]
-              #:unless (equal? k prec)
-              #:when (set-member? v prec))
-      (define rewrite (get-rewrite-operator k))
-      (define prog (alt-program altn))
-      (define prog* `(λ ,(program-variables prog) (,rewrite ,(program-body prog))))
-      (alt (apply-repr-change prog*) 'start '()))))
+  (define prog (alt-program altn))
+  (define repr-alts
+    (filter (λ (altn) (program-body (alt-program altn)))
+      (for/list ([(k v) (in-hash (*conversions*))]
+                #:unless (equal? k prec)
+                #:when (set-member? v prec))
+        (define rewrite (get-rewrite-operator k))
+        (define prog* `(λ ,(program-variables prog) (,rewrite ,(program-body prog))))
+        (alt (apply-repr-change prog*) 'start '()))))
+  (define const-alts
+    (list (make-alt `(λ ,(program-variables prog) 1))
+          (make-alt `(λ ,(program-variables prog) 0))
+          (make-alt `(λ ,(program-variables prog) -1))))
+  (append repr-alts const-alts))
 
 ;; Setting up
 (define (setup-prog! prog
@@ -100,7 +107,7 @@
   (debug #:from 'progress #:depth 3 "[2/2] Setting up program.")
   (define alt (make-alt prog))
   (^table^ (make-alt-table (*pcontext*) alt (*output-repr*)))
-  (define alts (alts-for-every-repr alt))
+  (define alts (starting-alts alt))
   (^table^ (atab-add-altns (^table^) alts (*output-repr*)))
   alt)
 
@@ -145,8 +152,10 @@
   (void))
 
 (define (choose-mult-alts)
-  (define altns (atab-not-done-alts (^table^)))
+  (define altns (filter (compose list? program-body alt-program)
+                        (atab-not-done-alts (^table^))))
   (cond
+   [(null? altns) (car (atab-not-done-alts (^table^)))]
    [(< (length altns) 5) altns] ; take max
    [else  ; take 5 (best, simplest, 3 evenly spaced by cost)
     (define best (argmin score-alt altns))

@@ -31,7 +31,7 @@
 
   (define cost&accuracy (map table-row-cost&accuracy tests))
   (define pareto-points (compute-pareto-curve cost&accuracy))
-  (if (> (length costs) 1) ; generate the scatterplot if necessary
+  (if (> (length pareto-points) 1) ; generate the scatterplot if necessary
       (call-with-output-file (build-path dir "cost-accuracy.png")
         (λ (out) (make-alt-cost-accuracy-plot pareto-points out)) #:exists 'replace)
       (when (file-exists? (build-path dir "cost-accuracy.png"))
