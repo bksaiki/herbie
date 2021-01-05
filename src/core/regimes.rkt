@@ -30,14 +30,10 @@
 ;; pidx = Point index: The index of the point to the left of which we should split.
 (struct si (cidx pidx) #:prefab)
 
-;; Sorts regimes differently
-(define *regimes-sorted-high-low* (make-parameter #t))
-
 (define (alt-score alt)
   (errors-score (errors (alt-program alt) (*pcontext*) (*output-repr*))))
 
 (define (compute-regimes sorted repr sampler)
-  (define order-alts (if (*regimes-sorted-high-low*) identity reverse))
   (define all-alts
     (let loop ([alts sorted] [idx 0])
       (debug "Computing regimes starting at alt" (+ idx 1) "of"
@@ -47,11 +43,11 @@
        [(= (length alts) 1) (list (car alts))]
        [else
         (timeline-event! 'regimes)
-        (define opt (infer-splitpoints (order-alts alts) repr))
+        (define opt (infer-splitpoints alts repr))
         (timeline-event! 'bsearch)
         (define branched-alt (combine-alts opt repr sampler))
-        (define high (si-cidx (argmin (λ (x) (si-cidx x)) (option-split-indices opt))))
-        (cons branched-alt (loop (drop alts (+ high 1)) (+ idx high 1)))])))
+        (define high (si-cidx (argmax (λ (x) (si-cidx x)) (option-split-indices opt))))
+        (cons branched-alt (loop (take alts high) (+ idx (- (length alts) high))))])))
 
   ; Put the simplest of the best alts in front
   (define scores (map alt-score all-alts))

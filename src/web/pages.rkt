@@ -14,7 +14,9 @@
   (define types
     (if good?
         (let ([other (test-success-other-alts result)])
-          (build-list (length other) (λ (x) (format "m~a" x))))
+          (if (< (length other) 100)
+              (build-list (length other) (λ (x) (format "m~a" x)))
+              '()))
         '()))
 
   (define pages

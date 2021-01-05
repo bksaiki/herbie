@@ -56,6 +56,7 @@
                  costs times all-alts)
    result)
   (define repr (test-output-repr test))
+  (define alt-plots? (< (length other-alts) 100))
 
   (fprintf out "<!doctype html>\n")
   (write-xexpr
@@ -110,7 +111,7 @@
               (define title "The X axis uses an exponential scale")
               `(figure ([id ,(format "fig-~a" idx)] [class ,(if split-var? "default" "")])
                 ,@(reverse ; buttons are sorted R/L
-                    (for/list ([alt other-alts] [idx2 (in-naturals)])
+                    (for/list ([alt other-alts] [idx2 (in-naturals)] #:when alt-plots?)
                       (let ([name (format "Other~a" idx2)])
                         `(img ([width "800"] [height "300"] [title ,title] [data-name ,name]
                                [src ,(format "plot-~am~a.png" idx idx2)])))))
@@ -125,7 +126,10 @@
                 (img ([width "800"] [height "300"] [title ,title] [data-name "Result"]
                       [src ,(format "plot-~ab.png" idx)]))
                 (figcaption (p "Bits error versus " (var ,(~a var)))))]
-             [else ""]))))
+             [else ""]))
+        ,(if alt-plots?
+             `(p "Too many alternatives generated, ignoring plots")
+             "")))
 
       ,(if (and fpcore? (for/and ([p points]) (andmap number? p)))
            (render-interactive start-alt (car points))
@@ -150,7 +154,7 @@
             ,(if (= idx 1) `(h1 "Alternatives") "")
             (table
               (tr (th ([style "font-weight:bold"]) ,name))
-              (tr (th "Accuracy") (td ,(format-bits (errors-score errs))))
+              (tr (th "Error") (td ,(format-bits (errors-score errs))))
               (tr (th "Cost") (td ,(format-bits cost))))
             (div ([class "math"]) "\\[" ,(core->tex
                                           (program->fpcore

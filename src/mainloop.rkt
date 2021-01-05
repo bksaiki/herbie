@@ -504,7 +504,7 @@
             (for/list ([altn all-alts] [prog progs])
               (alt `(λ ,(program-variables (alt-program altn)) ,prog) `(simplify (2)) (list altn)))
             alt-equal?)
-          > #:key alt-cost))
+          < #:key alt-cost))
   (*all-alts* reduced-alts)
 
   ;; Regimes

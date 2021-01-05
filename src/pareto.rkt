@@ -69,6 +69,7 @@
   (let loop ([pts pts] [h (make-hash `((0 . 0)))]) ; keep a hash of costs and partial sums
     (cond
      [(null? pts) h]
+     [(null? (car pts)) (loop (cdr pts) h)]
      [else
       (define h* (make-hash))
       (for* ([(x y) (in-hash h)] [pt (car pts)])  ; make a new hash: h + pts, dedup by taking max
