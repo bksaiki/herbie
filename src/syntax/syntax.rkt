@@ -6,8 +6,7 @@
 (provide constant? variable? operator? operator-info constant-info get-operator-itype
          get-parametric-operator parametric-operators parametric-operators-reverse
          get-parametric-constant parametric-constants parametric-constants-reverse
-         *unknown-d-ops* *unknown-f-ops* *loaded-ops*
-         repr-conv? rewrite-repr-op? get-repr-conv
+         *unknown-ops* *loaded-ops* repr-conv? rewrite-repr-op? get-repr-conv
          operator-cost)
 
 (module+ internals 

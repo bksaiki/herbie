@@ -78,14 +78,6 @@
    [(list 'if cond ift iff) (repr-of ift repr env)]
    [(list op args ...) (operator-info op 'otype)]))
 
-(define (expr-supports? expr field)
-  (let loop ([expr expr])
-    (match expr
-      [(list op args ...)
-       (and (operator-info op field) (andmap loop args))]
-      [(? variable?) true]
-      [(? constant?) (or (not (symbol? expr)) (constant-info expr field))])))
-
 ;; Converting constants
 
 (define/contract (location-hash prog)
