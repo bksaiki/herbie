@@ -5,9 +5,9 @@
 (module+ test (require rackunit))
 
 (provide reap define-table table-ref table-set! table-remove!
-         for/append string-prefix call-with-output-files
-         take-up-to flip-lists list/true find-duplicates all-partitions
-         argmins argmaxs index-of set-disjoint? comparator sample-double sample-single
+         string-prefix call-with-output-files
+         take-up-to flip-lists list/true find-duplicates
+         argmins argmaxs index-of set-disjoint? comparator
          parse-flag get-seed set-seed!
          quasisyntax syntax-e* dict sym-append
          format-time format-bits in-sorted-dict web-resource
@@ -43,18 +43,6 @@
 
 (define (table-remove! tbl key)
   (hash-remove! (cdr tbl) key))
-
-;; More various helpful values
-
-(define-syntax-rule (for/append (defs ...)
-                                bodies ...)
-  (apply append
-         (for/list (defs ...)
-           bodies ...)))
-
-(module+ test
-  (check-equal? (for/append ([v (in-range 5)]) (list v v v))
-                '(0 0 0 1 1 1 2 2 2 3 3 3 4 4 4)))
 
 ;; Utility list functions
 
@@ -229,23 +217,9 @@
       (build-path web-resource-path name)
       web-resource-path))
 
-(define (all-partitions n #:from [k 1])
-  (cond
-   [(= n 0) '(())]
-   [(< n k) '()]
-   [else
-    (append (map (curry cons k) (all-partitions (- n k) #:from k))
-            (all-partitions n #:from (+ k 1)))]))
-
 (define ((comparator test) . args)
   (for/and ([left args] [right (cdr args)])
     (test left right)))
-
-(define (sample-double)
-  (floating-point-bytes->real (integer->integer-bytes (random-bits 64) 8 #f)))
-
-(define (sample-single)
-  (floating-point-bytes->real (integer->integer-bytes (random-bits 32) 4 #f)))
 
 (define (syntax-e* stx)
   (match (syntax-e stx)

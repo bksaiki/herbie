@@ -3,7 +3,8 @@
 (require "common.rkt" "programs.rkt" "points.rkt" "alternative.rkt" "errors.rkt"
          "timeline.rkt" "syntax/rules.rkt" "syntax/types.rkt" "conversions.rkt"
          "core/localize.rkt" "core/taylor.rkt" "core/alt-table.rkt" "sampling.rkt"
-         "core/simplify.rkt" "core/matcher.rkt" "core/regimes.rkt" "interface.rkt")
+         "core/simplify.rkt" "core/matcher.rkt" "core/regimes.rkt" "interface.rkt"
+         "syntax/sugar.rkt")
 
 (provide (all-defined-out))
 
@@ -125,10 +126,6 @@
        (program-body (alt-program alt)))))
   (printf "Error: ~a bits\n" (errors-score (atab-min-errors (^table^)))))
 
-(define (add-conversion! prec1 prec2)
-  (define single-conv (list (list prec1 prec2)))
-  (generate-conversions single-conv))
-
 ;; Begin iteration
 (define (choose-alt! n)
   (unless (< n (length (atab-active-alts (^table^))))
@@ -198,33 +195,41 @@
 
 ; taylor uses older format, resugaring and desugaring needed
 ; not all taylor transforms are valid in a given repr, return false on failure
-(define (taylor-expr expr repr vars transformer)
+(define (taylor-expr expr repr var f finv)
   (define expr* (resugar-program expr repr #:full #f))
   (with-handlers ([exn:fail? (const #f)]) 
-    (let ([approx (approximate expr* vars #:transform transformer)])
-      (desugar-program approx repr (*var-reprs*) #:full #f))))
+    (define genexpr (approximate expr* var #:transform (cons f finv)))
+    (λ () (desugar-program (genexpr) repr (*var-reprs*) #:full #f))))
+
+(define (exact-min x y)
+  (if (<= x y) x y))
+
+(define (much-< x y)
+  (< x (/ y 2)))
 
 (define (taylor-alt altn loc)
   (define expr (location-get loc (alt-program altn)))
-  (define repr (location-repr loc (alt-program altn) (*output-repr*) (*var-reprs*)))
+  (define repr (get-representation (repr-of expr (*output-repr*) (*var-reprs*))))
   (define vars (free-variables expr))
-  (if (or (null? vars) ;; `approximate` cannot be called with a null vars list
-          (not (set-member? '(binary64 binary32) ; currently taylor/reduce breaks with posits
-                            (repr-of expr (*output-repr*) (*var-reprs*)))))
+  ;; currently taylor/reduce breaks with posits 
+  (if (not (set-member? '(binary64 binary32) (representation-name repr)))
       (list altn)
-      (for/fold ([alts '()] #:result (reverse alts)) ; filter out failed taylor transforms
-                ([transform-type transforms-to-try])
-        (match-define (list name f finv) transform-type)
-        (define transformer (map (const (cons f finv)) vars))
-        (define valid? #t)
-        (define altn*
-          (alt (location-do loc (alt-program altn) 
-                            (λ (x) (let ([expr* (taylor-expr x repr vars transformer)])
-                                      (unless expr* (set! valid? #f))
-                                      expr*)))
-              `(taylor ,name ,loc)
-              (list altn)))
-        (if valid? (cons altn* alts) alts))))
+      (reap [sow]
+        (for* ([var vars] [transform-type transforms-to-try])
+          (match-define (list name f finv) transform-type)
+          (define genexpr (taylor-expr expr repr var f finv))
+
+          #;(define pts (for/list ([(p e) (in-pcontext (*pcontext*))]) p))
+          (let loop ([last (for/list ([(p e) (in-pcontext (*pcontext*))]) +inf.0)] [i 0])
+            (define expr* (location-do loc (alt-program altn) (const (genexpr))))
+            (when expr*
+              (define errs (errors expr* (*pcontext*) (*output-repr*)))
+              (define altn* (alt expr* `(taylor ,name ,loc) (list altn)))
+              (when (ormap much-< errs last)
+                #;(eprintf "Better on ~a\n" (ormap (λ (pt x y) (and (much-< x y) (list pt x y))) pts errs last))
+                (sow altn*)
+                (when (< i 3)
+                  (loop (map exact-min errs last) (+ i 1))))))))))
 
 (define (gen-series!)
   (unless (^locs^)
@@ -309,10 +314,6 @@
   (^children^ (append (^children^) rewritten))
   (^gened-rewrites^ #t)
   (void))
-
-(define (num-nodes expr)
-  (if (not (list? expr)) 1
-      (add1 (apply + (map num-nodes (cdr expr))))))
 
 (define (simplify!)
   (unless (^children^)
