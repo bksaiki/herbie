@@ -197,9 +197,9 @@
 ; not all taylor transforms are valid in a given repr, return false on failure
 (define (taylor-expr expr repr var f finv)
   (define expr* (resugar-program expr repr #:full #f))
-  (with-handlers ([exn:fail? (const #f)]) 
+  (with-handlers ([exn? (const identity)])
     (define genexpr (approximate expr* var #:transform (cons f finv)))
-    (λ () (desugar-program (genexpr) repr (*var-reprs*) #:full #f))))
+    (λ (x) (desugar-program (genexpr) repr (*var-reprs*) #:full #f))))
 
 (define (exact-min x y)
   (if (<= x y) x y))
@@ -221,7 +221,7 @@
 
           #;(define pts (for/list ([(p e) (in-pcontext (*pcontext*))]) p))
           (let loop ([last (for/list ([(p e) (in-pcontext (*pcontext*))]) +inf.0)] [i 0])
-            (define expr* (location-do loc (alt-program altn) (const (genexpr))))
+            (define expr* (location-do loc (alt-program altn) genexpr))
             (when expr*
               (define errs (errors expr* (*pcontext*) (*output-repr*)))
               (define altn* (alt expr* `(taylor ,name ,loc) (list altn)))

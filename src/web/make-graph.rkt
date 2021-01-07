@@ -128,8 +128,8 @@
                 (figcaption (p "Bits error versus " (var ,(~a var)))))]
              [else ""]))
         ,(if alt-plots?
-             `(p "Too many alternatives generated, ignoring plots")
-             "")))
+             ""
+             `(p "Too many alternatives generated, ignoring plots"))))
 
       ,(if (and fpcore? (for/and ([p points]) (andmap number? p)))
            (render-interactive start-alt (car points))
