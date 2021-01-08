@@ -221,7 +221,9 @@
 
           #;(define pts (for/list ([(p e) (in-pcontext (*pcontext*))]) p))
           (let loop ([last (for/list ([(p e) (in-pcontext (*pcontext*))]) +inf.0)] [i 0])
-            (define expr* (location-do loc (alt-program altn) genexpr))
+            (define expr* 
+              (with-handlers ([exn? (const (alt-program altn))])
+                (location-do loc (alt-program altn) genexpr)))
             (when expr*
               (define errs (errors expr* (*pcontext*) (*output-repr*)))
               (define altn* (alt expr* `(taylor ,name ,loc) (list altn)))

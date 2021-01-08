@@ -235,17 +235,19 @@
     (define iters 0)
     (define (pred v)
       (set! iters (+ 1 iters))
-      (parameterize ([*num-points* (*binary-search-test-points*)]
-                     [*timeline-disabled* true]
-                     [*var-reprs* (dict-set (*var-reprs*) var repr)])
-        (define ctx
-          (prepare-points start-prog
-                          `(λ ,(program-variables start-prog)
-                              (,eq-repr ,(caadr start-prog) ,(repr->real v repr)))
-                          repr
-                          (λ () (cons v (sampler)))))
-        (< (errors-score (errors prog1 ctx repr))
-           (errors-score (errors prog2 ctx repr)))))
+       ; take the first prog if sampling fails (is this even reasonable?)
+      (with-handlers ([exn:fail:user:herbie? (const #t)])
+        (parameterize ([*num-points* (*binary-search-test-points*)]
+                      [*timeline-disabled* true]
+                      [*var-reprs* (dict-set (*var-reprs*) var repr)])
+          (define ctx
+            (prepare-points start-prog
+                            `(λ ,(program-variables start-prog)
+                                (,eq-repr ,(caadr start-prog) ,(repr->real v repr)))
+                            repr
+                            (λ () (cons v (sampler)))))
+          (< (errors-score (errors prog1 ctx repr))
+            (errors-score (errors prog2 ctx repr))))))
     (define pt (binary-search-floats pred v1 v2 repr))
     (timeline-push! 'bstep (value->json v1 repr) (value->json v2 repr) iters (value->json pt repr))
     pt)

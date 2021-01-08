@@ -1,6 +1,6 @@
 #lang racket
 
-(require (only-in xml write-xexpr))
+(require json (only-in xml write-xexpr))
 (require "../common.rkt" "../datafile.rkt" "../pareto.rkt" "../sandbox.rkt"
          "common.rkt" "plot.rkt")
 
@@ -31,11 +31,18 @@
 
   (define cost&accuracy (map table-row-cost&accuracy tests))
   (define pareto-points (compute-pareto-curve cost&accuracy))
-  (if (> (length pareto-points) 1) ; generate the scatterplot if necessary
-      (call-with-output-file (build-path dir "cost-accuracy.png")
-        (λ (out) (make-alt-cost-accuracy-plot pareto-points out)) #:exists 'replace)
-      (when (file-exists? (build-path dir "cost-accuracy.png"))
-        (delete-file (build-path dir "cost-accuracy.png"))))
+  (define pareto-points-json (map (λ (p) (list (car p) (cdr p))) pareto-points))
+  (cond
+   [(> (length pareto-points) 1) ; generate the scatterplot if necessary
+    (call-with-output-file (build-path dir "cost-accuracy.png")
+      (λ (out) (make-alt-cost-accuracy-plot pareto-points out)) #:exists 'replace)
+    (call-with-output-file (build-path dir "pareto.json")
+      (λ (out) (write-json (make-hasheq `((points . ,pareto-points-json))) out)) #:exists 'replace)]
+   [else
+    (when (file-exists? (build-path dir "cost-accuracy.png"))
+      (delete-file (build-path dir "cost-accuracy.png")))
+    (when (file-exists? (build-path dir "pareto.json"))
+      (delete-file (build-path dir "pareto.json")))])
 
   (define table-labels
     '("Test" "Start" "Result" "Target" "Time"))
