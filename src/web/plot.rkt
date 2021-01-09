@@ -7,7 +7,7 @@
          "../sandbox.rkt")
 
 (provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot
-         make-alt-cost-accuracy-plot)
+         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -412,6 +412,28 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max (+ y-min y-max))))
 
+(define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
+  (define colors (list "red" "green" "blue" "gray"))
+  (when (> (length ptss) 4)
+    (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
+  
+  (parameterize ([plot-width 1600] [plot-height 600]
+                 [plot-font-size 10]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-ticks (linear-ticks #:number 9 #:base 32 #:divisors '(2 4 8))]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-y-label "Accuracy (bits)"])
+    (define pnts
+      (for/list ([pts ptss] [color colors])
+        (points (map vector (map car pts) (map cdr pts)) #:sym 'fullcircle #:color color #:size 4)))
+    (plot-file (cons (y-tick-lines) pnts)
+                out 'png
+                #:x-min 0 #:x-max xmax
+                #:y-min 0 #:y-max ymax)))
 
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)
