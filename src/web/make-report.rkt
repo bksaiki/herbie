@@ -43,7 +43,7 @@
   (cond
    [(> (length pareto-points) 1) ; generate the scatterplot if necessary
     (call-with-output-file (build-path dir "cost-accuracy.png")
-      (λ (out) (make-alt-cost-accuracy-plot pareto-points out)) #:exists 'replace)
+      (λ (out) (make-alt-cost-accuracy-plot tests pareto-points out)) #:exists 'replace)
     (call-with-output-file (build-path dir "pareto.json")
       (λ (out) (pareto->json tests pareto-points out)) #:exists 'replace)]
    [else

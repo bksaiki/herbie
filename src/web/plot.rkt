@@ -4,7 +4,7 @@
 (require "../common.rkt" "../points.rkt" "../float.rkt" "../programs.rkt"
          "../syntax/syntax.rkt" "../syntax/types.rkt"
          "../alternative.rkt" "../interface.rkt" "../syntax/read.rkt" "../core/regimes.rkt" 
-         "../sandbox.rkt")
+         "../sandbox.rkt" "../datafile.rkt")
 
 (provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot
          make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot)
@@ -388,12 +388,10 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max bits)))
 
-(define (make-alt-cost-accuracy-plot pts out)
+(define (make-alt-cost-accuracy-plot tests pts out)
   (match-define (list (cons costs scores) ...) pts)
-  (define x-min (argmin identity costs))
   (define x-max (argmax identity costs))
-  (define y-min (argmin identity scores))
-  (define y-max (argmax identity scores))
+  (define y-max (apply + (map (compose representation-total-bits get-representation table-row-precision) tests)))
 
   (parameterize ([plot-width 800] [plot-height 300]
                  [plot-background-alpha 0]
@@ -409,8 +407,8 @@
     (define pnts (points (map vector costs scores) #:sym 'fullcircle4 #:color "red" #:size 4))
     (plot-file (list pnts (y-tick-lines))
                out 'png
-               #:x-min 0 #:x-max (+ x-min x-max)
-               #:y-min 0 #:y-max (+ y-min y-max))))
+               #:x-min 0 #:x-max x-max
+               #:y-min 0 #:y-max y-max)))
 
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
   (define colors (list "red" "green" "blue" "gray"))

@@ -152,7 +152,7 @@
   (define altns (filter (compose list? program-body alt-program)
                         (atab-not-done-alts (^table^))))
   (cond
-   [(null? altns) (car (atab-not-done-alts (^table^)))]
+   [(null? altns) (list (car (atab-not-done-alts (^table^))))]
    [(< (length altns) 5) altns] ; take max
    [else  ; take 5 (best, simplest, 3 evenly spaced by cost)
     (define best (argmin score-alt altns))
