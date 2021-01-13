@@ -309,11 +309,18 @@
           (for/fold ([altn altn]) ([cng cl])
             (alt (change-apply cng (alt-program altn)) (list 'change cng) (list altn)))))))
 
+  (define rewritten*
+    (cond
+     [(> (length rewritten) 1000)
+      (debug #:from 'progress #:depth 4 "Rewrite limit of 1000 exceeded, generated" (length rewritten))
+      (take rewritten 1000)]
+     [else rewritten]))
+
   (timeline-log! 'inputs (length (^locs^)))
   (timeline-log! 'rules rule-counts)
-  (timeline-log! 'outputs (length rewritten))
+  (timeline-log! 'outputs (length rewritten*))
 
-  (^children^ (append (^children^) rewritten))
+  (^children^ (append (^children^) rewritten*))
   (^gened-rewrites^ #t)
   (void))
 
