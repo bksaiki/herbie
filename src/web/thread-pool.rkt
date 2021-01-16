@@ -1,13 +1,21 @@
 #lang racket
 
-(require racket/place)
-(require "../common.rkt" "../sandbox.rkt" "../plugin.rkt" "pages.rkt"
-         "../syntax/read.rkt" "../datafile.rkt")
+(require racket/place json)
+(require "../common.rkt" "../config.rkt" "../datafile.rkt" "../interface.rkt"
+         "../plugin.rkt" "../sandbox.rkt" "../syntax/read.rkt" "pages.rkt")
 
 (provide get-test-results)
 
 (define (graph-folder-path tname index)
   (format "~a-~a" index (string-prefix (string-replace tname #px"\\W+" "") 50)))
+
+(define (pareto->json tr out)
+  (define h (make-hasheq))
+  (hash-set! h 'branch *herbie-branch*)
+  (hash-set! h 'test (table-row-name tr))
+  (hash-set! h 'y-max (representation-total-bits (get-representation (table-row-precision tr))))
+  (hash-set! h 'points (map (λ (p) (list (car p) (cdr p))) (table-row-cost&accuracy tr)))
+  (write-json h out))
 
 (define (run-test index test #:seed seed #:profile profile? #:debug debug? #:dir dir)
   (cond
@@ -31,8 +39,12 @@
           #:exists 'replace
           (λ (out) (make-page page out result profile?)))))
 
-    (define out (get-table-data result dirname))
-    (if error? (struct-copy table-row out [status "crash"]) out)]
+    (define tr (get-table-data result dirname))
+    (call-with-output-file (build-path rdir "pareto.json")
+      #:exists 'replace
+      (λ (out) (pareto->json tr out)))
+
+    (if error? (struct-copy table-row tr [status "crash"]) tr)]
    [else
     (define result (get-test-result test #:seed seed))
     (get-table-data result "")]))
