@@ -68,19 +68,13 @@
 (define (starting-alts altn)
   (define prec (representation-name (*output-repr*)))
   (define prog (alt-program altn))
-  (define repr-alts
-    (filter (λ (altn) (program-body (alt-program altn)))
-      (for/list ([(k v) (in-hash (*conversions*))]
-                #:unless (equal? k prec)
-                #:when (set-member? v prec))
-        (define rewrite (get-rewrite-operator k))
-        (define prog* `(λ ,(program-variables prog) (,rewrite ,(program-body prog))))
-        (alt (apply-repr-change prog*) 'start '()))))
-  (define const-alts
-    (list (make-alt `(λ ,(program-variables prog) 1))
-          (make-alt `(λ ,(program-variables prog) 0))
-          (make-alt `(λ ,(program-variables prog) -1))))
-  (append repr-alts const-alts))
+  (filter (λ (altn) (program-body (alt-program altn)))
+    (for/list ([(k v) (in-hash (*conversions*))]
+              #:unless (equal? k prec)
+              #:when (set-member? v prec))
+      (define rewrite (get-rewrite-operator k))
+      (define prog* `(λ ,(program-variables prog) (,rewrite ,(program-body prog))))
+      (alt (apply-repr-change prog*) 'start '()))))
 
 ;; Setting up
 (define (setup-prog! prog
@@ -505,13 +499,20 @@
   (define repr (*output-repr*))
   (define all-alts (atab-all-alts (^table^)))
 
+  (define const-alts
+    (let ([prog (alt-program (car all-alts))])
+      (list (make-alt `(λ ,(program-variables prog) 1))
+            (make-alt `(λ ,(program-variables prog) 0))
+            (make-alt `(λ ,(program-variables prog) -1)))))
+  (define all-alts* (append all-alts const-alts))
+
   ;; de-dup using fp-safe transformations
   (timeline-event! 'simplify)
-  (define progs (simplify-batch (map (compose program-body alt-program) all-alts)
+  (define progs (simplify-batch (map (compose program-body alt-program) all-alts*)
                                 #:rules (*fp-safe-simplify-rules*) #:precompute #t))
   (define reduced-alts
     (sort (remove-duplicates
-            (for/list ([altn all-alts] [prog progs])
+            (for/list ([altn all-alts*] [prog progs])
               (alt `(λ ,(program-variables (alt-program altn)) ,prog) `(simplify (2)) (list altn)))
             alt-equal?)
           < #:key alt-cost))
