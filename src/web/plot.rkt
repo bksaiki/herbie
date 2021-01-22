@@ -415,7 +415,7 @@
   (when (> (length ptss) 4)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
   
-  (parameterize ([plot-width 1600] [plot-height 600]
+  (parameterize ([plot-width 800] [plot-height 300]
                  [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost"]
