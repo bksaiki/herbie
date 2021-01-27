@@ -341,9 +341,13 @@
      [(list (? rewrite-repr-op? op) body)
       (define iprec (operator-info op 'otype))
       (define oprec (if prec prec (representation-name (*output-repr*))))
-      (define conv (get-repr-conv iprec oprec))
-      (define body* (loop body iprec))
-      (and conv body* (list conv body*))]
+      (cond
+       [(equal? iprec oprec)
+        (loop body iprec)]
+       [else
+        (define conv (get-repr-conv iprec oprec))
+        (define body* (loop body iprec))
+        (and conv body* (list conv body*))])]
      [(list (? operator? op) args ...) 
       (define prec* (if prec prec (operator-info op 'otype)))
       (if (equal? (operator-info op 'otype) prec*)
