@@ -339,17 +339,18 @@
   (define y-min (argmin identity times))
   (define y-max (argmax identity times))
 
-  (parameterize ([plot-width 500] [plot-height 500]
+  (parameterize ([plot-width 600] [plot-height 400]
                  [plot-background-alpha 0]
                  [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost"]
+                 [plot-x-ticks no-ticks]
                  [plot-x-far-axis? #t]
                  [plot-x-far-ticks no-ticks]
-                 [plot-y-ticks (linear-ticks #:number 9)]
+                 [plot-y-ticks no-ticks]
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
-                 [plot-y-label "Time (ms)"])
+                 [plot-y-label "Time"])
     (define pnts (points (map vector costs times)
                          #:sym 'fullcircle4
                          #:fill-color "lightblue"))

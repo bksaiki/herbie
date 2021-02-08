@@ -107,11 +107,10 @@
         ; Disabled
         (define times
           (for/list ([alt alts])
-            0))
-        ;    (let ([prog (eval-prog (alt-program alt) 'fl output-repr)]
-        ;          [t0 (current-inexact-milliseconds)])
-        ;      (for* ([i (in-range 5)] [pnt newpoints]) (apply prog pnt))
-        ;      (/ (- (current-inexact-milliseconds) t0) (*reeval-pts*)))))
+           (let ([prog (eval-prog (alt-program alt) 'fl output-repr)]
+                 [t0 (current-inexact-milliseconds)])
+             (for* ([i (in-range 5)] [pnt newpoints]) (apply prog pnt))
+             (/ (- (current-inexact-milliseconds) t0) (*reeval-pts*)))))
 
         (test-success test
                       (bf-precision)

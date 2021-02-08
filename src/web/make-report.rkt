@@ -31,12 +31,11 @@
       (let ([ct (table-row-cost&time test)])
         (values (append (car ct) costs) (append (cdr ct) times)))))
 
-
-  ;(if (> (length costs) 1) ; generate the scatterplot if necessary
-  ;    (call-with-output-file (build-path dir "scatterplot.png")
-  ;      (λ (out) (make-cost-scatter-plot (cons costs times) out)) #:exists 'replace)
-  ;    (when (file-exists? (build-path dir "scatterplot.png"))
-  ;      (delete-file (build-path dir "scatterplot.png"))))
+  (if (> (length costs) 1) ; generate the scatterplot if necessary
+      (call-with-output-file (build-path dir "cost-time.png")
+        (λ (out) (make-cost-scatter-plot (cons costs times) out)) #:exists 'replace)
+      (when (file-exists? (build-path dir "cost-time.png"))
+        (delete-file (build-path dir "cost-time.png"))))
 
   (define cost&accuracy (map table-row-cost&accuracy tests))
   (define pareto-points (compute-pareto-curve cost&accuracy))
@@ -148,12 +147,12 @@
                           "»"))
                      "")))))
 
-; Main scatterplot
-;      ,(if (> (length costs) 1)
-;         `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
-;             (img ([width "800"] [height "300"] [title "cost-scatter"]
-;                   [data-name "Cost Scatter"] [src "scatterplot.png"])))
-;           "")))
+
+     ,(if (> (length costs) 1)
+         `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
+            (img ([width "800"] [height "300"] [title "cost-scatter"]
+                  [data-name "Cost Scatter"] [src "scatterplot.png"])))
+          "")
       ; Cost accuracy scatter
       ,(if (> (length costs) 1)
          `(div ([id "scatterplot"] [style "margin-top: 2.5em"])
