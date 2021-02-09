@@ -328,6 +328,7 @@
    (error-points err pts repr #:axis idx #:color theme)
    (error-avg err pts repr #:axis idx #:color theme)))
 
+;;; Cost vs. Time (internal)
 (define (make-cost-scatter-plot result out)
   (define-values (costs times)
     (if (test-success? result) ; may be a test-success or two lists
@@ -357,6 +358,7 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max (+ y-min y-max))))
 
+;;; Cost vs. Accuracy (internal, single benchmark)
 (define (make-cost-accuracy-plot result out)
   (define repr (test-output-repr (test-result-test result)))
   (define bits (representation-total-bits repr))
@@ -388,6 +390,7 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max bits)))
 
+;;; Cost vs. Accuracy (internal, full suite)
 (define (make-alt-cost-accuracy-plot tests pts out)
   (match-define (list (cons costs scores) ...) pts)
   (define x-max (argmax identity costs))
@@ -410,28 +413,39 @@
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))
 
+;;; Cost vs. Accuracy (external, suite comparison)
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "red" "green" "blue" "gray"))
-  (when (> (length ptss) 4)
+  (define colors (list "darkred" "green" "teal"))
+  (define shapes '(fullcircle fullsquare fulltriangle))
+  (when (> (length ptss) 3)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
+
+  (define (trans x)
+    (- ymax (cdr x)))
+
+  (define xmin
+    (for/fold ([xmin xmax]) ([pts ptss])
+      (let ([xmin* (car (argmin car pts))])
+        (if (< xmin* xmin) xmin* xmin))))
   
   (parameterize ([plot-width 800] [plot-height 300]
-                 [plot-font-size 10]
+                 [plot-font-size 11]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost"]
+                 [plot-x-label "Cost estimate"]
+                 [plot-x-ticks (linear-ticks #:number 4)]
                  [plot-x-far-axis? #t]
-                 [plot-x-far-ticks no-ticks]
-                 [plot-y-ticks (linear-ticks #:number 9 #:base 32 #:divisors '(2 4 8))]
+                 [plot-y-ticks (linear-ticks #:number 4 #:base 4)]
                  [plot-y-far-axis? #t]
-                 [plot-y-axis? #t]
-                 [plot-y-label "Accuracy (bits)"])
+                 [plot-y-label "Error log2(ULP)"])
     (define pnts
-      (for/list ([pts ptss] [color colors])
-        (points (map vector (map car pts) (map cdr pts)) #:sym 'fullcircle #:color color #:size 4)))
-    (plot-file (cons (y-tick-lines) pnts)
-                out 'png
-                #:x-min 0 #:x-max xmax
-                #:y-min 0 #:y-max ymax)))
+      (for/list ([pts ptss] [color colors] [shape shapes])
+        (points (map vector (map (λ (x) (log (car x) 2)) pts) (map trans pts))
+                #:sym shape
+                #:color color
+                #:size 6)))
+    (plot-file pnts out 'png
+               #:x-min (log xmin 2) #:x-max (log xmax 2)
+               #:y-min 0 #:y-max ymax)))
 
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)
