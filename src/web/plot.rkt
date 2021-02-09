@@ -419,13 +419,9 @@
   (define shapes '(fullcircle fullsquare fulltriangle))
   (when (> (length ptss) 3)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
-
+    
   (define (trans x)
     (- ymax (cdr x)))
-  (define xmin
-    (for/fold ([xmin xmax]) ([pts ptss])
-      (let ([xmin* (car (argmin car pts))])
-        (if (< xmin* xmin) xmin* xmin))))
   
   (parameterize ([plot-width 800] [plot-height 300]
                  [plot-font-size 11]
@@ -438,12 +434,12 @@
                  [plot-y-label "Error log2(ULP)"])
     (define pnts
       (for/list ([pts ptss] [color colors] [shape shapes])
-        (points (map vector (map (λ (x) (log (car x) 2)) pts) (map trans pts))
+        (points (map vector (map car pts) (map trans pts))
                 #:sym shape
                 #:color color
                 #:size 6)))
     (plot-file (reverse pnts) out 'png
-               #:x-min (log xmin 2) #:x-max (log xmax 2)
+               #:x-min 0 #:x-max xmax
                #:y-min 0 #:y-max ymax)))
 
 
