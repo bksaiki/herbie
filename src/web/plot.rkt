@@ -422,7 +422,6 @@
 
   (define (trans x)
     (- ymax (cdr x)))
-
   (define xmin
     (for/fold ([xmin xmax]) ([pts ptss])
       (let ([xmin* (car (argmin car pts))])
@@ -431,7 +430,7 @@
   (parameterize ([plot-width 800] [plot-height 300]
                  [plot-font-size 11]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost estimate"]
+                 [plot-x-label "Cost estimate log2(cost)"]
                  [plot-x-ticks (linear-ticks #:number 4)]
                  [plot-x-far-axis? #t]
                  [plot-y-ticks (linear-ticks #:number 4 #:base 4)]
@@ -443,7 +442,7 @@
                 #:sym shape
                 #:color color
                 #:size 6)))
-    (plot-file pnts out 'png
+    (plot-file (reverse pnts) out 'png
                #:x-min (log xmin 2) #:x-max (log xmax 2)
                #:y-min 0 #:y-max ymax)))
 
