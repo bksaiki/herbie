@@ -56,6 +56,7 @@
   (define data
     (match info
       [(report-info date commit branch hostname seed flags points iterations note tests)
+       (define time (/ (apply + (map table-row-time tests)) 1000))
        (make-hash
         `((date . ,(date->seconds date))
           (commit . ,commit)
@@ -66,6 +67,7 @@
           (points . ,points)
           (iterations . ,iterations)
           (note . ,note)
+          (time . ,time)
           (tests . ,(map simplify-test tests))))]))
 
   (call-with-output-file file (curry write-json data) #:exists 'replace))
