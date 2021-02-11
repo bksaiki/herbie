@@ -415,9 +415,9 @@
 
 ;;; Cost vs. Accuracy (external, suite comparison)
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "darkred" "green" "teal"))
-  (define shapes '(fullcircle fullsquare fulltriangle))
-  (when (> (length ptss) 3)
+  (define colors (list "darkred" "green" "teal" "orange" "black" "purple"))
+  (define shapes '(fullcircle fullsquare fulltriangle fullcircle fullcircle fullcircle))
+  (when (> (length ptss) 6)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
     
   (define (trans x)
