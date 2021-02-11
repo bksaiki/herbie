@@ -415,8 +415,8 @@
 
 ;;; Cost vs. Accuracy (external, suite comparison)
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "darkred" "green" "teal" "orange" "black" "purple"))
-  (define shapes '(fullcircle fullsquare fulltriangle fullcircle fullcircle fullcircle))
+  (define colors (list "darkred" "green" "black" "teal" "orange" "purple"))
+  (define shapes '(fullcircle full7star full5star fulltriangle fullcircle fullcircle))
   (when (> (length ptss) 6)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
     
@@ -426,7 +426,7 @@
   (parameterize ([plot-width 800] [plot-height 300]
                  [plot-font-size 11]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost estimate log2(cost)"]
+                 [plot-x-label "Cost estimate (cost)"]
                  [plot-x-ticks (linear-ticks #:number 4)]
                  [plot-x-far-axis? #t]
                  [plot-y-ticks (linear-ticks #:number 4 #:base 4)]
@@ -434,10 +434,14 @@
                  [plot-y-label "Error log2(ULP)"])
     (define pnts
       (for/list ([pts ptss] [color colors] [shape shapes])
-        (points (map vector (map car pts) (map trans pts))
-                #:sym shape
-                #:color color
-                #:size 6)))
+        (if (< (length pts) 2)
+            (points (map vector (map car pts) (map trans pts))
+                    #:sym shape
+                    #:color color
+                    #:size 15)
+            (lines (map vector (map car pts) (map trans pts))
+                    #:color color
+                    #:width 2))))
     (plot-file (reverse pnts) out 'png
                #:x-min 0 #:x-max xmax
                #:y-min 0 #:y-max ymax)))
