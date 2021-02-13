@@ -31,13 +31,30 @@
     #:exists 'replace
     (λ (out) (make-combined-cost-accuracy-plot names ptss* x-max y-max out))))
 
+(define (alt-plot json-hashes dirs y-max out-file)
+  (for ([dir dirs] [json-hash json-hashes])
+    (define points (hash-ref json-hash 'points))
+    (define points* (map (λ (l) (cons (car l) (cadr l))) points))
+    (call-with-output-file (build-path dir out-file)
+      #:exists 'replace
+     (λ (out) (make-single-cost-accuracy-plot points* y-max out)))))
+
+
 (module+ main
- (define out-file "./pareto.png")
+ (define out-file "pareto.png")
+ (define mode 'standard)
+ (define alt-ymax 64)
  (command-line
   #:once-each
   [("-o") out "Output directory"
    (set! out-file out)]
+  [("--alt") "Alternative mode"
+   (set! mode 'alternative)]
+  [("--ymax") num "Y-max in alternative mode"
+    (set! alt-ymax (string->number num))]
   #:args dirs
   (check-pareto-files-exist! dirs)
   (define json-hashes (map extract-json dirs))
-  (plot-points json-hashes out-file)))
+  (match mode
+   ['alternative (alt-plot json-hashes dirs alt-ymax out-file)]
+   [_ (plot-points json-hashes out-file)])))

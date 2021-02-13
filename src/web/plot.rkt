@@ -7,7 +7,8 @@
          "../sandbox.rkt" "../datafile.rkt")
 
 (provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot
-         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot make-combined-cost-time-plot)
+         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot
+         make-combined-cost-time-plot make-single-cost-accuracy-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -410,6 +411,31 @@
                  [plot-y-label "Accuracy (bits)"])
     (define pnts (points (map vector costs scores) #:sym 'fullcircle4 #:color "red" #:size 4))
     (plot-file (list pnts (y-tick-lines))
+               out 'png
+               #:x-min 0 #:x-max x-max
+               #:y-min 0 #:y-max y-max)))
+
+;;; Cost vs. Accuracy (external, single benchmark)
+(define (make-single-cost-accuracy-plot pts y-max out)
+  (match-define (list (cons costs accs) ...) pts)
+  (define errs (map (curry - y-max) accs))
+  (define x-max (argmax identity costs))
+
+  (parameterize ([plot-width 700] [plot-height 300]
+                 [plot-background-alpha 0]
+                 [plot-font-size 10]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost estimate"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-ticks (linear-ticks #:base 32 #:divisors '(2 4 8))]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-y-label "Error log2(ULP)"])
+    (define pnts (points (map vector costs errs)
+                         #:sym 'fullcircle
+                         #:fill-color "red"))
+    (plot-file (list pnts)
                out 'png
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))
