@@ -7,7 +7,7 @@
          "../sandbox.rkt" "../datafile.rkt")
 
 (provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot
-         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot)
+         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot make-combined-cost-time-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -446,6 +446,32 @@
                 out 'png
                 #:x-min (- (log xmin) 1/4) #:x-max (+ (log xmax) 1/4)
                 #:y-min 0 #:y-max ymax)))
+
+;;; Cost vs. Time (external)
+(define (make-combined-cost-time-plot pts out)
+  (match-define (list (cons costs times) ...) pts)
+  (define x-max (argmax identity costs))
+  (define x-min (argmin identity costs))
+  (define y-max (argmax identity times))
+  (define y-min (argmin identity times))
+
+  (parameterize ([plot-width 350] [plot-height 300]
+                 [plot-background-alpha 0]
+                 [plot-font-size 10]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-y-label "Time"])
+    (define pnts (points (map vector costs times)
+                         #:sym 'fullcircle4
+                         #:fill-color "lightblue"))
+    (plot-file (list pnts)
+               out 'png
+               #:x-min 0 #:x-max (+ x-min x-max)
+               #:y-min 0 #:y-max (+ y-min y-max))))
 
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)

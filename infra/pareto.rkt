@@ -32,7 +32,7 @@
     (λ (out) (make-combined-cost-accuracy-plot names ptss* x-max y-max out))))
 
 (module+ main
- (define out-file "./")
+ (define out-file "./pareto.png")
  (command-line
   #:once-each
   [("-o") out "Output directory"
