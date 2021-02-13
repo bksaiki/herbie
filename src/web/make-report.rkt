@@ -13,13 +13,10 @@
     ["timeout" "TIME"]
     [_ (format-bits (- (table-row-start result) (table-row-result result)) #:sign #t)]))
 
-(define (pareto->json tests pareto-points out)
+(define (costs->json costs times out)
   (define h (make-hasheq))
-  (define pareto-points* (map (λ (p) (list (car p) (cdr p))) pareto-points))
-  (define ymax (apply + (map (compose representation-total-bits get-representation table-row-precision) tests)))
-  (hash-set! h 'points pareto-points*)
-  (hash-set! h 'branch *herbie-branch*)
-  (hash-set! h 'y-max ymax)
+  (define points (map list costs times))
+  (hash-set! h 'points points)
   (write-json h out))
 
 (define (make-report-page out info dir)
@@ -42,14 +39,13 @@
   (cond
    [(> (length pareto-points) 1) ; generate the scatterplot if necessary
     (call-with-output-file (build-path dir "cost-accuracy.png")
-      (λ (out) (make-alt-cost-accuracy-plot tests pareto-points out)) #:exists 'replace)
-    (call-with-output-file (build-path dir "pareto.json")
-      (λ (out) (pareto->json tests pareto-points out)) #:exists 'replace)]
+      (λ (out) (make-alt-cost-accuracy-plot tests pareto-points out)) #:exists 'replace)]
    [else
     (when (file-exists? (build-path dir "cost-accuracy.png"))
-      (delete-file (build-path dir "cost-accuracy.png")))
-    (when (file-exists? (build-path dir "pareto.json"))
-      (delete-file (build-path dir "pareto.json")))])
+      (delete-file (build-path dir "cost-accuracy.png")))])
+
+  (call-with-output-file (build-path dir "cost-time.json")
+    (λ (out) (costs->json costs times out)) #:exists 'replace)
 
   (define table-labels
     '("Test" "Start" "Result" "Target" "Time"))

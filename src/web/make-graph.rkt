@@ -56,7 +56,7 @@
                  costs times all-alts)
    result)
   (define repr (test-output-repr test))
-  (define alt-plots? (< (length other-alts) 100))
+  (define alt-plots? (< (length other-alts) 100))  
 
   (fprintf out "<!doctype html>\n")
   (write-xexpr

@@ -9,12 +9,11 @@
 (define (graph-folder-path tname index)
   (format "~a-~a" index (string-prefix (string-replace tname #px"\\W+" "") 50)))
 
-(define (pareto->json tr out)
+(define (costs->json res out)
+  (define costs (test-success-costs res))
+  (define times (test-success-times res))
   (define h (make-hasheq))
-  (hash-set! h 'branch *herbie-branch*)
-  (hash-set! h 'test (table-row-name tr))
-  (hash-set! h 'y-max (representation-total-bits (get-representation (table-row-precision tr))))
-  (hash-set! h 'points (map (λ (p) (list (car p) (cdr p))) (table-row-cost&accuracy tr)))
+  (hash-set! h 'points (map list costs times))
   (write-json h out))
 
 (define (run-test index test #:seed seed #:profile profile? #:debug debug? #:dir dir)
@@ -40,9 +39,11 @@
           (λ (out) (make-page page out result profile?)))))
 
     (define tr (get-table-data result dirname))
-    (call-with-output-file (build-path rdir "pareto.json")
-      #:exists 'replace
-      (λ (out) (pareto->json tr out)))
+    (if (test-success? result)
+        (call-with-output-file (build-path rdir "cost-time.json")
+          (λ (out) (costs->json result out)) #:exists 'replace)
+        (when (file-exists? (build-path rdir "cost-time.json"))
+          (delete-file (build-path rdir "cost-time.json"))))
 
     (if error? (struct-copy table-row tr [status "crash"]) tr)]
    [else
