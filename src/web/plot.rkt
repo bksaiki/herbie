@@ -485,12 +485,12 @@
                  [plot-background-alpha 0]
                  [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost"]
+                 [plot-x-label "Cost estimate"]
                  [plot-x-far-axis? #t]
                  [plot-x-far-ticks no-ticks]
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
-                 [plot-y-label "Time"])
+                 [plot-y-label "Time (s)"])
     (define pnts (points (map vector costs times)
                          #:sym 'fullcircle4
                          #:fill-color "lightblue"))
