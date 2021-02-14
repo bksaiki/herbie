@@ -450,13 +450,11 @@
   (define (trans x)
     (- ymax (cdr x)))
   
-  (parameterize ([plot-width 800] [plot-height 300]
+  (parameterize ([plot-width 700] [plot-height 300]
                  [plot-font-size 11]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost estimate (cost)"]
-                 [plot-x-ticks (linear-ticks #:number 4)]
                  [plot-x-far-axis? #t]
-                 [plot-y-ticks (linear-ticks #:number 4 #:base 4)]
                  [plot-y-far-axis? #t]
                  [plot-y-label "Error log2(ULP)"])
     (define pnts
