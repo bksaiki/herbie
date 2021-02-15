@@ -18,10 +18,17 @@
   (define names (map (curryr hash-ref 'branch) json-hashes))
   (define ymaxs (map (curryr hash-ref 'y-max) json-hashes))
   (define ptss (map (curryr hash-ref 'points) json-hashes))
-  (define ptss* (map (curry map (λ (l) (cons (car l) (cadr l)))) ptss))
 
   (unless (apply = ymaxs)
-    (error 'plot-points "Maximum y values do not match"))
+    (displayln "WARN: Maximum y values do not match"))
+
+  (define ymaxmax (apply max ymaxs))
+  (define dys (map (curry - ymaxmax) ymaxs))
+
+  (define ptss* 
+    (for/list ([pts ptss] [dy dys])
+      (for/list ([pt pts])
+        (cons (car pt) (+ (cadr pt) dy)))))
 
   (define x-max
     (for/fold ([x-max 0]) ([pts ptss*])
