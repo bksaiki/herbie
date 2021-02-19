@@ -416,10 +416,10 @@
                #:y-min 0 #:y-max y-max)))
 
 ;;; Cost vs. Accuracy (external, single benchmark)
-(define (make-single-cost-accuracy-plot pts y-max out)
+(define (make-single-cost-accuracy-plot pts start y-max out)
   (match-define (list (cons costs accs) ...) pts)
   (define errs (map (curry - y-max) accs))
-  (define x-max (argmax identity costs))
+  (define x-max (argmax identity (cons (car start) costs)))
 
   (parameterize ([plot-width 700] [plot-height 300]
                  [plot-background-alpha 0]
@@ -435,7 +435,11 @@
     (define pnts (points (map vector costs errs)
                          #:sym 'fullcircle
                          #:fill-color "red"))
-    (plot-file (list pnts)
+    (define spnt (points (list (vector (car start) (cdr start)))
+                         #:sym 'full5star
+                         #:color "black"
+                         #:size 15))
+    (plot-file (list pnts spnt)
                out 'png
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))

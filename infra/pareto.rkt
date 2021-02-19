@@ -41,10 +41,12 @@
 (define (alt-plot json-hashes dirs y-max out-file)
   (for ([dir dirs] [json-hash json-hashes])
     (define points (hash-ref json-hash 'points))
+    (define start (hash-ref json-hash 'start))
+    (define start* (cons (car start) (cadr start)))
     (define points* (map (λ (l) (cons (car l) (cadr l))) points))
     (call-with-output-file (build-path out-file)
       #:exists 'replace
-     (λ (out) (make-single-cost-accuracy-plot points* y-max out)))))
+     (λ (out) (make-single-cost-accuracy-plot points* start* y-max out)))))
 
 
 (module+ main
