@@ -42,13 +42,13 @@
   (for ([dir dirs] [json-hash json-hashes])
     (define points (hash-ref json-hash 'points))
     (define points* (map (λ (l) (cons (car l) (cadr l))) points))
-    (call-with-output-file (build-path dir out-file)
+    (call-with-output-file (build-path out-file)
       #:exists 'replace
      (λ (out) (make-single-cost-accuracy-plot points* y-max out)))))
 
 
 (module+ main
- (define out-file "pareto.png")
+ (define out-file "pareto.pdf")
  (define mode 'standard)
  (define alt-ymax 64)
  (command-line

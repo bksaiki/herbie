@@ -450,8 +450,8 @@
   (define (trans x)
     (- ymax (cdr x)))
   
-  (parameterize ([plot-width 700] [plot-height 300]
-                 [plot-font-size 11]
+  (parameterize ([plot-width 1400] [plot-height 600]
+                 [plot-font-size 22]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost estimate (cost)"]
                  [plot-x-far-axis? #t]
@@ -466,8 +466,8 @@
                     #:size 15)
             (lines (map vector (map car pts) (map trans pts))
                     #:color color
-                    #:width 2))))
-    (plot-file (reverse pnts) out 'png
+                    #:width 4))))
+    (plot-file (reverse pnts) out 'pdf
                #:x-min 0 #:x-max xmax
                #:y-min 0 #:y-max ymax)))
 
