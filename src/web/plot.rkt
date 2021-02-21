@@ -434,20 +434,20 @@
                  [plot-y-label "Error log2(ULP)"])
     (define pnts (points (map vector costs errs)
                          #:sym 'fullcircle
-                         #:fill-color "red"))
+                         #:color "red"))
     (define spnt (points (list (vector (car start) (cdr start)))
-                         #:sym 'full5star
+                         #:sym 'fullsquare
                          #:color "black"
-                         #:size 15))
+                         #:size 16))
     (plot-file (list pnts spnt)
-               out 'png
+               out 'pdf
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))
 
 ;;; Cost vs. Accuracy (external, suite comparison)
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "darkred" "green" "black" "teal" "orangered" "purple" "darkblue" "gold"))
-  (define shapes '(fullcircle full7star full5star fulltriangle fullcircle fullcircle fullcircle fullcircle))
+  (define colors (list "darkred" "forestgreen" "black" "teal" "orangered" "purple" "darkblue" "gold"))
+  (define shapes '(fullcircle fullsquare fullsquare fulltriangle fullcircle fullcircle fullcircle fullcircle))
   (when (> (length ptss) 8)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
     
@@ -467,7 +467,7 @@
             (points (map vector (map car pts) (map trans pts))
                     #:sym shape
                     #:color color
-                    #:size 15)
+                    #:size 32)
             (lines (map vector (map car pts) (map trans pts))
                     #:color color
                     #:width 4))))
@@ -495,9 +495,9 @@
                  [plot-y-label "Time (s)"])
     (define pnts (points (map vector costs times)
                          #:sym 'fullcircle4
-                         #:fill-color "lightblue"))
+                         #:color "mediumblue"))
     (plot-file (list pnts)
-               out 'png
+               out 'pdf
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max (+ y-min y-max))))
 

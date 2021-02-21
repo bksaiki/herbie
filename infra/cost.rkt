@@ -17,7 +17,7 @@
     (λ (out) (make-combined-cost-time-plot points* out))))
 
 (module+ main
- (define out-file "./cost-time.png")
+ (define out-file "./cost-time.pdf")
  (command-line
   #:once-each
   [("-o") out "Output directory"
