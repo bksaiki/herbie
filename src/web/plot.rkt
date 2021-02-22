@@ -416,10 +416,11 @@
                #:y-min 0 #:y-max y-max)))
 
 ;;; Cost vs. Accuracy (external, single benchmark)
-(define (make-single-cost-accuracy-plot pts start y-max out)
-  (match-define (list (cons costs accs) ...) pts)
-  (define errs (map (curry - y-max) accs))
-  (define x-max (argmax identity (cons (car start) costs)))
+(define (make-single-cost-accuracy-plot ptss start y-max out)
+  (define x-max 
+    (for/fold ([x-max 0]) ([pts ptss])
+      (let ([mcost (apply max (map car pts))])
+        (if (> mcost x-max) mcost x-max))))
 
   (parameterize ([plot-width 700] [plot-height 300]
                  [plot-background-alpha 0]
@@ -432,21 +433,25 @@
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
                  [plot-y-label "Error log2(ULP)"])
-    (define pnts (points (map vector costs errs)
-                         #:sym 'fullcircle
-                         #:color "red"))
+    (define pnts 
+      (for/list ([pts ptss] [color (list "red" "blue")] [shape (list 'fullsquare 'fulltriangle)])
+        (let ([costs (map car pts)] [errs (map (compose (curry - y-max) cdr) pts)])
+                (points (map vector costs errs)
+                         #:size 10
+                         #:sym shape
+                         #:color color))))
     (define spnt (points (list (vector (car start) (cdr start)))
                          #:sym 'fullsquare
                          #:color "black"
                          #:size 16))
-    (plot-file (list pnts spnt)
+    (plot-file (append pnts (list spnt))
                out 'pdf
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))
 
 ;;; Cost vs. Accuracy (external, suite comparison)
 (define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "darkred" "forestgreen" "black" "teal" "orangered" "purple" "darkblue" "gold"))
+  (define colors (list "darkred" "orangered" "black" "teal" "orangered" "purple" "darkblue" "forestgreen"))
   (define shapes '(fullcircle fullsquare fullsquare fulltriangle fullcircle fullcircle fullcircle fullcircle))
   (when (> (length ptss) 8)
     (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
@@ -457,10 +462,10 @@
   (parameterize ([plot-width 1400] [plot-height 600]
                  [plot-font-size 22]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost estimate (cost)"]
+                 [plot-x-label "Sum of cost estimates"]
                  [plot-x-far-axis? #t]
                  [plot-y-far-axis? #t]
-                 [plot-y-label "Error log2(ULP)"])
+                 [plot-y-label "Sum of error log2(ULP)"])
     (define pnts
       (for/list ([pts ptss] [color colors] [shape shapes])
         (if (< (length pts) 2)

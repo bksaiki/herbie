@@ -39,14 +39,21 @@
     (λ (out) (make-combined-cost-accuracy-plot names ptss* x-max y-max out))))
 
 (define (alt-plot json-hashes dirs y-max out-file)
+  (define h (make-hash))
   (for ([dir dirs] [json-hash json-hashes])
     (define points (hash-ref json-hash 'points))
-    (define start (hash-ref json-hash 'start))
-    (define start* (cons (car start) (cadr start)))
     (define points* (map (λ (l) (cons (car l) (cadr l))) points))
-    (call-with-output-file (build-path out-file)
-      #:exists 'replace
-     (λ (out) (make-single-cost-accuracy-plot points* start* y-max out)))))
+    (define start (hash-ref json-hash 'start #f))
+    (unless (or (hash-has-key? h 'start) start)
+      (error 'alt-plot "expected 'start json value"))
+    (hash-update! h 'points (λ (x) (cons points* x)) (list points*))
+    (hash-update! h 'start (λ (x) x) start))
+  (define points (hash-ref h 'points))
+  (define start (hash-ref h 'start))
+  (define start* (cons (car start) (cadr start)))
+  (call-with-output-file (build-path out-file)
+    #:exists 'replace
+    (λ (out) (make-single-cost-accuracy-plot points start* y-max out))))
 
 
 (module+ main
