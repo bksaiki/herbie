@@ -18,10 +18,17 @@
   (define names (map (curryr hash-ref 'branch) json-hashes))
   (define ymaxs (map (curryr hash-ref 'y-max) json-hashes))
   (define ptss (map (curryr hash-ref 'points) json-hashes))
-  (define ptss* (map (curry map (λ (l) (cons (car l) (cadr l)))) ptss))
 
   (unless (apply = ymaxs)
-    (error 'plot-points "Maximum y values do not match"))
+    (displayln "WARN: Maximum y values do not match"))
+
+  (define ymaxmax (apply max ymaxs))
+  (define dys (map (curry - ymaxmax) ymaxs))
+
+  (define ptss* 
+    (for/list ([pts ptss] [dy dys])
+      (for/list ([pt pts])
+        (cons (car pt) (+ (cadr pt) dy)))))
 
   (define x-max
     (for/fold ([x-max 0]) ([pts ptss*])
@@ -31,13 +38,39 @@
     #:exists 'replace
     (λ (out) (make-combined-cost-accuracy-plot names ptss* x-max y-max out))))
 
+(define (alt-plot json-hashes dirs y-max out-file)
+  (define h (make-hash))
+  (for ([dir dirs] [json-hash json-hashes])
+    (define points (hash-ref json-hash 'points))
+    (define points* (map (λ (l) (cons (car l) (cadr l))) points))
+    (define start (hash-ref json-hash 'start #f))
+    (unless (or (hash-has-key? h 'start) start)
+      (error 'alt-plot "expected 'start json value"))
+    (hash-update! h 'points (λ (x) (cons points* x)) (list points*))
+    (hash-update! h 'start (λ (x) x) start))
+  (define points (hash-ref h 'points))
+  (define start (hash-ref h 'start))
+  (define start* (cons (car start) (cadr start)))
+  (call-with-output-file (build-path out-file)
+    #:exists 'replace
+    (λ (out) (make-single-cost-accuracy-plot points start* y-max out))))
+
+
 (module+ main
- (define out-file "./")
+ (define out-file "pareto.pdf")
+ (define mode 'standard)
+ (define alt-ymax 64)
  (command-line
   #:once-each
   [("-o") out "Output directory"
    (set! out-file out)]
+  [("--alt") "Alternative mode"
+   (set! mode 'alternative)]
+  [("--ymax") num "Y-max in alternative mode"
+    (set! alt-ymax (string->number num))]
   #:args dirs
   (check-pareto-files-exist! dirs)
   (define json-hashes (map extract-json dirs))
-  (plot-points json-hashes out-file)))
+  (match mode
+   ['alternative (alt-plot json-hashes dirs alt-ymax out-file)]
+   [_ (plot-points json-hashes out-file)])))

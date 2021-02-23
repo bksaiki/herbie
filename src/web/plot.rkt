@@ -7,7 +7,8 @@
          "../sandbox.rkt" "../datafile.rkt")
 
 (provide make-axis-plot make-points-plot make-cost-scatter-plot make-cost-accuracy-plot
-         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot)
+         make-alt-cost-accuracy-plot make-combined-cost-accuracy-plot
+         make-combined-cost-time-plot make-single-cost-accuracy-plot)
 
 (struct color-theme (scatter line fit))
 (define *red-theme* (color-theme "pink" "red" "darkred"))
@@ -328,6 +329,7 @@
    (error-points err pts repr #:axis idx #:color theme)
    (error-avg err pts repr #:axis idx #:color theme)))
 
+;;; Cost vs. Time (internal)
 (define (make-cost-scatter-plot result out)
   (define-values (costs times)
     (if (test-success? result) ; may be a test-success or two lists
@@ -338,17 +340,18 @@
   (define y-min (argmin identity times))
   (define y-max (argmax identity times))
 
-  (parameterize ([plot-width 800] [plot-height 300]
+  (parameterize ([plot-width 600] [plot-height 400]
                  [plot-background-alpha 0]
                  [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
                  [plot-x-label "Cost"]
+                 [plot-x-ticks no-ticks]
                  [plot-x-far-axis? #t]
                  [plot-x-far-ticks no-ticks]
-                 [plot-y-ticks (linear-ticks #:number 9)]
+                 [plot-y-ticks no-ticks]
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
-                 [plot-y-label "Time (ms)"])
+                 [plot-y-label "Time"])
     (define pnts (points (map vector costs times)
                          #:sym 'fullcircle4
                          #:fill-color "lightblue"))
@@ -357,6 +360,7 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max (+ y-min y-max))))
 
+;;; Cost vs. Accuracy (internal, single benchmark)
 (define (make-cost-accuracy-plot result out)
   (define repr (test-output-repr (test-result-test result)))
   (define bits (representation-total-bits repr))
@@ -388,6 +392,7 @@
                #:x-min 0 #:x-max (+ x-min x-max)
                #:y-min 0 #:y-max bits)))
 
+;;; Cost vs. Accuracy (internal, full suite)
 (define (make-alt-cost-accuracy-plot tests pts out)
   (match-define (list (cons costs scores) ...) pts)
   (define x-max (argmax identity costs))
@@ -410,28 +415,99 @@
                #:x-min 0 #:x-max x-max
                #:y-min 0 #:y-max y-max)))
 
-(define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
-  (define colors (list "red" "green" "blue" "gray"))
-  (when (> (length ptss) 4)
-    (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
-  
-  (parameterize ([plot-width 800] [plot-height 300]
+;;; Cost vs. Accuracy (external, single benchmark)
+(define (make-single-cost-accuracy-plot ptss start y-max out)
+  (define x-max 
+    (for/fold ([x-max 0]) ([pts ptss])
+      (let ([mcost (apply max (map car pts))])
+        (if (> mcost x-max) mcost x-max))))
+
+  (parameterize ([plot-width 700] [plot-height 300]
+                 [plot-background-alpha 0]
                  [plot-font-size 10]
                  [plot-x-tick-label-anchor 'top]
-                 [plot-x-label "Cost"]
+                 [plot-x-label "Cost estimate"]
                  [plot-x-far-axis? #t]
                  [plot-x-far-ticks no-ticks]
-                 [plot-y-ticks (linear-ticks #:number 9 #:base 32 #:divisors '(2 4 8))]
+                 [plot-y-ticks (linear-ticks #:base 32 #:divisors '(2 4 8))]
                  [plot-y-far-axis? #t]
                  [plot-y-axis? #t]
-                 [plot-y-label "Accuracy (bits)"])
+                 [plot-y-label "Error log2(ULP)"])
+    (define pnts 
+      (for/list ([pts ptss] [color (list "black" "blue")] [fill (list "orange" "blue")]
+                 [shape (list 'fullsquare 'fulltriangle)]
+                 [size (list 21 15)])
+        (let ([costs (map car pts)] [errs (map (compose (curry - y-max) cdr) pts)])
+                (points (map vector costs errs)
+                         #:size size
+                         #:sym shape
+                         #:fill-color fill
+                         #:color color))))
+    (define spnt (points (list (vector (car start) (cdr start)))
+                         #:sym 'fullsquare
+                         #:color "black"
+                         #:size 24))
+    (plot-file (append pnts (list spnt))
+               out 'pdf
+               #:x-min 0 #:x-max x-max
+               #:y-min 0 #:y-max y-max)))
+
+;;; Cost vs. Accuracy (external, suite comparison)
+(define (make-combined-cost-accuracy-plot names ptss xmax ymax out)
+  (define colors (list "darkred" "orangered" "black" "teal" "orangered" "purple" "darkblue" "forestgreen"))
+  (define shapes '(fullcircle fullsquare fullsquare fulltriangle fullcircle fullcircle fullcircle fullcircle))
+  (when (> (length ptss) 8)
+    (error 'make-combined-cost-accuracy-plot "Too many sets of points to plot"))
+    
+  (define (trans x)
+    (- ymax (cdr x)))
+  
+  (parameterize ([plot-width 1400] [plot-height 600]
+                 [plot-font-size 22]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Sum of cost estimates"]
+                 [plot-x-far-axis? #t]
+                 [plot-y-far-axis? #t]
+                 [plot-y-label "Sum of error log2(ULP)"])
     (define pnts
-      (for/list ([pts ptss] [color colors])
-        (points (map vector (map car pts) (map cdr pts)) #:sym 'fullcircle #:color color #:size 4)))
-    (plot-file (cons (y-tick-lines) pnts)
-                out 'png
-                #:x-min 0 #:x-max xmax
-                #:y-min 0 #:y-max ymax)))
+      (for/list ([pts ptss] [color colors] [shape shapes])
+        (if (< (length pts) 2)
+            (points (map vector (map car pts) (map trans pts))
+                    #:sym shape
+                    #:color color
+                    #:size 32)
+            (lines (map vector (map car pts) (map trans pts))
+                    #:color color
+                    #:width 4))))
+    (plot-file (reverse pnts) out 'pdf
+               #:x-min 0 #:x-max xmax
+               #:y-min 0 #:y-max ymax)))
+
+;;; Cost vs. Time (external)
+(define (make-combined-cost-time-plot pts out)
+  (match-define (list (cons costs times) ...) pts)
+  (define x-max (argmax identity costs))
+  (define x-min (argmin identity costs))
+  (define y-max (argmax identity times))
+  (define y-min (argmin identity times))
+
+  (parameterize ([plot-width 350] [plot-height 300]
+                 [plot-background-alpha 0]
+                 [plot-font-size 10]
+                 [plot-x-tick-label-anchor 'top]
+                 [plot-x-label "Cost estimate"]
+                 [plot-x-far-axis? #t]
+                 [plot-x-far-ticks no-ticks]
+                 [plot-y-far-axis? #t]
+                 [plot-y-axis? #t]
+                 [plot-y-label "Time (s)"])
+    (define pnts (points (map vector costs times)
+                         #:sym 'fullcircle4
+                         #:color "mediumblue"))
+    (plot-file (list pnts)
+               out 'pdf
+               #:x-min 0 #:x-max (+ x-min x-max)
+               #:y-min 0 #:y-max (+ y-min y-max))))
 
 
 (define (make-alt-plots point-alt-idxs alt-idxs title out result)

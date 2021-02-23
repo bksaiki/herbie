@@ -67,22 +67,13 @@
           (parameterize ([*num-points* (*reeval-pts*)])
             (prepare-points (test-specification test) (test-precondition test) output-repr (*sampler*))))
 
-        (define pareto-m (pareto-measure-alts alts newcontext output-repr))
-        (timeline-push! 'other (list "Pareto" pareto-m))
-        (debug #:from 'pareto-measure #:depth 1
-               "Pareto frontier area: " pareto-m)
-
         (define fns
           (map (λ (alt) (eval-prog (alt-program alt) 'fl output-repr))
                (remove-duplicates (*all-alts*))))
 
         (define errs (map (λ (alt) (errors (alt-program alt) newcontext output-repr)) alts))
-        (define baseline-errs (baseline-error fns context newcontext output-repr))
-        (define oracle-errs (oracle-error fns newcontext output-repr))
 
-        (timeline-adjust! 'regimes 'oracle (errors-score oracle-errs))
         (timeline-adjust! 'regimes 'accuracy (errors-score (car errs)))
-        (timeline-adjust! 'regimes 'baseline (errors-score baseline-errs))
         (timeline-adjust! 'regimes 'name (test-name test))
         (timeline-adjust! 'regimes 'link ".")
 
@@ -107,11 +98,10 @@
         ; Disabled
         (define times
           (for/list ([alt alts])
-            0))
-        ;    (let ([prog (eval-prog (alt-program alt) 'fl output-repr)]
-        ;          [t0 (current-inexact-milliseconds)])
-        ;      (for* ([i (in-range 5)] [pnt newpoints]) (apply prog pnt))
-        ;      (/ (- (current-inexact-milliseconds) t0) (*reeval-pts*)))))
+           (let ([prog (eval-prog (alt-program alt) 'fl output-repr)]
+                 [t0 (current-inexact-milliseconds)])
+             (for* ([i (in-range 5)] [pnt newpoints]) (apply prog pnt))
+             (/ (- (current-inexact-milliseconds) t0) (*reeval-pts*)))))
 
         (test-success test
                       (bf-precision)
@@ -126,8 +116,7 @@
                       (if (test-output test)
                           (errors (test-target test) newcontext output-repr)
                           #f)
-                      baseline-errs oracle-errs
-                      (cdr alts) (cdr errs)
+                      '() '() (cdr alts) (cdr errs)
                       costs times (*all-alts*)))))
 
   (define (on-exception start-time e)
