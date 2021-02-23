@@ -348,6 +348,24 @@
         (define conv (get-repr-conv iprec oprec))
         (define body* (loop body iprec))
         (and conv body* (list conv body*))])]
+     [(list 'if con ift iff)
+      (define prec* (if prec prec (representation-name (*output-repr*))))
+      (define con*
+        (let loop2 ([con con])
+          (cond
+           [(set-member? '(TRUE 'FALSE) con)
+            con]
+           [else
+            (match-define (list op args ...) con)
+            (define cprec (operator-info op 'itype))
+            (cond
+             [(equal? cprec 'bool)
+              `(,op ,@(map loop2 args))]
+             [else
+              `(,op ,@(map (curryr loop cprec) args))])])))
+      (define ift* (loop ift prec*))
+      (define iff* (loop iff prec*))
+      (and ift* iff* `(if ,con* ,ift* ,iff*))]
      [(list (? operator? op) args ...) 
       (define prec* (if prec prec (operator-info op 'otype)))
       (if (equal? (operator-info op 'otype) prec*)
