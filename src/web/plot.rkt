@@ -434,16 +434,19 @@
                  [plot-y-axis? #t]
                  [plot-y-label "Error log2(ULP)"])
     (define pnts 
-      (for/list ([pts ptss] [color (list "red" "blue")] [shape (list 'fullsquare 'fulltriangle)])
+      (for/list ([pts ptss] [color (list "black" "blue")] [fill (list "orange" "blue")]
+                 [shape (list 'fullsquare 'fulltriangle)]
+                 [size (list 21 15)])
         (let ([costs (map car pts)] [errs (map (compose (curry - y-max) cdr) pts)])
                 (points (map vector costs errs)
-                         #:size 10
+                         #:size size
                          #:sym shape
+                         #:fill-color fill
                          #:color color))))
     (define spnt (points (list (vector (car start) (cdr start)))
                          #:sym 'fullsquare
                          #:color "black"
-                         #:size 16))
+                         #:size 24))
     (plot-file (append pnts (list spnt))
                out 'pdf
                #:x-min 0 #:x-max x-max
