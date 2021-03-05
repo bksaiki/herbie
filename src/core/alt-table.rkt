@@ -194,8 +194,8 @@
       (for/hash ([pnt rel-points])
         (define cost-hash
           (for/hash ([(cost rec) (hash-ref point->alts pnt)])
-            (values cost (struct-copy cost-rec rec
-                                      [altns (remove* altns (cost-rec-altns rec))]))))
+            (values cost (cost-rec (cost-rec-berr rec)
+                                   (remove* altns (cost-rec-altns rec))))))
         (values pnt cost-hash))
       #:combine (λ (a b) b)))
 
