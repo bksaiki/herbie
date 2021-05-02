@@ -2,7 +2,7 @@
 
 (require math/bigfloat rival)
 (require "syntax/types.rkt" "syntax/syntax.rkt" "float.rkt" "interface.rkt" "timeline.rkt")
-
+(require (only-in fpbench core-common-subexpr-elim))
 (module+ test (require rackunit))
 
 (provide (all-from-out "syntax/syntax.rkt")
@@ -38,16 +38,24 @@
   (expr-cost body))
 
 (define (expr-cost expr)
-  (let loop ([expr expr] [repr (*output-repr*)])
+  (define core (list 'FPCore (list) expr))
+  (define core* (core-common-subexpr-elim core))
+  (match-define (list 'FPCore (list) expr*) core*)
+  (let loop ([expr expr*] [repr (*output-repr*)])
     (match expr
+     [(list (or 'let 'let*) (list (list vars vals) ...) body)
+      (define ireprs
+        (for/list ([val vals])
+          (get-representation (repr-of val repr '()))))
+      (apply + (loop body repr) (map loop vals ireprs))]
      [(list 'if cond ift iff)
       (+ 1 (loop cond repr) (max (loop ift repr) (loop iff repr)))]
      [(list op args ...)
       (define ireprs (operator-info op 'itype))
       (define ireprs*
-        (if (list? ireprs)
-            (map get-representation ireprs)
-            (make-list (length args) (get-representation ireprs))))
+        (if (representation-name? ireprs)
+            (make-list (length args) (get-representation ireprs))
+            (map get-representation ireprs)))
       (apply + (operator-cost op (representation-total-bits repr))
                (map loop args ireprs*))]
      [_ (representation-total-bits repr)])))
