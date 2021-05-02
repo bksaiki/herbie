@@ -48,10 +48,9 @@
 ;; that all the correct rules are generated but it'll collect more reprs than is necessary.
 ;; TODO: Find a better place to put this. Watch out for problems with multithreading / parameters. 
 (define (get-representation name)
-  (if (or (hash-has-key? representations name) ; check existing
-          (generate-repr name)) ; ask plugins to try generating this repr
-    (hash-ref representations name)
-    (error 'get-representation "Unknown representation ~a" name))) ; else fail
+  (or (hash-ref representations name #f)
+      (and (generate-repr name) (hash-ref representations name))
+      (error 'get-representation "Unknown representation ~a" name))) ; else fail
 
 (define (register-representation! name type repr? . args)
   (hash-set! representations name
@@ -61,9 +60,7 @@
   (register-representation! 'name 'type repr? args ...))
 
 (define (representation-name? x)
-  (with-handlers ([exn:fail? (const #f)])
-    (get-representation x)
-    true))
+  (hash-has-key? representations x))
 
 (define-representation (bool bool boolean?)
   identity
