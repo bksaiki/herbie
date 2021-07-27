@@ -35,13 +35,6 @@
                           identity 
                           (λ (_) (generate-missing-rules) (fp-safe-simplify-rules))))
 
-(define (load-ruler-rules)
-  (define rules (rational-rules 2 3 10 #t))
-  (displayln "In <herbie>/syntax/rules.rkt")
-  (for ([(in out) (in-dict rules)])
-    (printf "~a -> ~a\n" in out))
-)
-
 ;; Update parameters
 
 ;; Note on rules
@@ -186,7 +179,7 @@
     (unless (empty? rules*)   ; only add the ruleset if it contains one
       (*rulesets* (cons (list rules* groups ctx) (*rulesets*))))))
 
-;; Generate rules for new reprs
+;;; Generate rules for new reprs
 
 (define (generate-missing-rules)
   (for ([repr (*needed-reprs*)])
@@ -194,6 +187,18 @@
       (generate-rules-for (representation-type repr) repr))
     (unless (set-member? (*reprs-with-rules*) repr)
       (add-rules-from-rulesets repr))))
+
+;;; Rule generation
+
+(define (load-ruler-rules)
+  (define rules (rational-rules 2 3 10 #t))
+  (printf "Generated: ~a rules\n" (length rules))
+  (for ([(in out) (in-dict rules)])
+    (printf "~a -> ~a\n" in out))
+)
+
+
+;;; Static rules
 
 ; Commutativity
 (define-ruleset* commutativity (arithmetic simplify fp-safe)

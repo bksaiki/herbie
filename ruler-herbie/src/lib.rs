@@ -284,7 +284,11 @@ impl HerbieLanguage for Math {
 
         for eq in report.eqs {
             string.push_str(&eq.lhs.to_string());
-            string.push_str(" -> ");
+            if eq.rewrites.len() > 1 {
+                string.push_str(" <=> ");
+            } else {
+                string.push_str(" => ");
+            }
             string.push_str(&eq.rhs.to_string());
             string.push('\n');
         }

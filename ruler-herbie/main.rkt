@@ -17,4 +17,5 @@
 
 (define (rational-rules iters argc fuzzc final?)
   (define rules-str (generate-rational-rules iters argc fuzzc final?))
-  (map ruler-rule->rule (string-split rules-str "\n")))
+  (for/fold ([rules '()]) ([str (string-split rules-str "\n")])
+    (append rules (ruler-rule->rules str))))
