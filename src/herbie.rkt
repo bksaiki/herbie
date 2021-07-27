@@ -1,10 +1,14 @@
 #lang racket
 
 (require racket/lazy-require)
-(require "common.rkt" "multi-command-line.rkt" "errors.rkt" "load-plugin.rkt" "sandbox.rkt")
+(require "common.rkt" "multi-command-line.rkt" "errors.rkt" "load-plugin.rkt"
+         "syntax/rules.rkt" "sandbox.rkt")
 
 ;; Load all the plugins
 (load-herbie-plugins)
+
+;; Load Ruler rules
+(load-ruler-rules)
 
 (lazy-require
  ["web/demo.rkt" (run-demo)]

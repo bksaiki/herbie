@@ -1,12 +1,16 @@
 use ruler::*;
 use egg::*;
 
+use std::ffi::{CString};
+use std::os::raw::c_char;
+
 use num::bigint::{BigInt, RandBigInt, ToBigInt};
 use num::{rational::Ratio, Signed, ToPrimitive, Zero};
 use rand::Rng;
 use rand_pcg::Pcg64;
 use z3::ast::Ast;
 use z3::*;
+use gag::Gag;
 
 pub type Constant = Ratio<BigInt>;
 
@@ -31,6 +35,10 @@ fn mk_constant(n: &BigInt, d: &BigInt) -> Option<Constant> {
     } else {
         Some(Ratio::new(n.clone(), d.clone()))
     }
+}
+
+trait HerbieLanguage {
+    fn run_with_params(iterc: usize, argc: usize, fuzzc: usize, do_final: bool) -> String;
 }
 
 impl SynthLanguage for Math {
@@ -239,14 +247,16 @@ impl SynthLanguage for Math {
             lvec == rvec
         }
     }
+}
 
-    fn main() {
+impl HerbieLanguage for Math {
+    fn run_with_params(iterc: usize, argc: usize, fuzzc: usize, do_final: bool) -> String {
         // Transcription of <ruler>/src/lib.rs
         let params = SynthParams {
             seed:0,
             n_samples:0,
-            variables:3,
-            iters:1,
+            variables:argc,
+            iters:iterc,
             rules_to_take:0,
             chunk_size:100000,
             minimize:false,
@@ -258,18 +268,28 @@ impl SynthLanguage for Math {
             eqsat_node_limit:300000,
             eqsat_iter_limit:2,
             eqsat_time_limit:60,
-            important_cvec_offsets:5,
+            important_cvec_offsets:2,
             str_int_variables:1,
             complete_cvec:false,
             no_xor:false,
             no_shift:false,
-            num_fuzz:0,
+            num_fuzz:fuzzc,
             use_smt:false,
-            do_final_run:false,
+            do_final_run:do_final,
         };
 
         let syn = Synthesizer::<Self>::new(params);
-        let _ = syn.run();
+        let report = syn.run();
+        let mut string = String::from("");
+
+        for eq in report.eqs {
+            string.push_str(&eq.lhs.to_string());
+            string.push_str(" -> ");
+            string.push_str(&eq.rhs.to_string());
+            string.push('\n');
+        }
+        
+        string
     }
 }
 
@@ -356,13 +376,34 @@ fn egg_to_z3<'a>(
     (buf.pop().unwrap(), assumes)
 }
 
+////////////////////// Exports //////////////////////
+
 #[no_mangle]
 pub unsafe extern "C" fn generate_rational_rules(
     iters: u32,
     argc: u32,
     fuzzc: u32,
     do_final: bool
-) {
+) -> *const c_char { 
     println!("Starting Ruler-Herbie...");
-    Math::main();
+    println!(" Iterations: {}", iters);
+    println!(" Variables: {}", argc);
+    println!(" Num Fuzz: {}", fuzzc);
+    println!(" Final Run?: {}", do_final);
+
+    let gag = Gag::stdout().unwrap();
+    let rules = Math::run_with_params(iters as usize, argc as usize, fuzzc as usize, do_final);
+    let string = CString::new(rules.to_string()).unwrap();
+    let ptr = string.as_ptr();
+    std::mem::forget(string);
+    drop(gag);
+
+    println!("Done");
+
+    ptr
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn destroy_string(ptr: *mut c_char) {
+    let _str = CString::from_raw(ptr);
 }

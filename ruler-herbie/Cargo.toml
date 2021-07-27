@@ -12,6 +12,7 @@ num-bigint = { version = "0.3", features = ["rand"] }
 rand_pcg = "0.2"
 rand = { version = "0.7", default-features = false, features = ["std"] }
 z3 = {version="0.10.0", features = ["static-link-z3"]}
+gag = "1.0.0"
 
 [lib]
 name = "ruler_herbie"

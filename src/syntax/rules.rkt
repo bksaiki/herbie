@@ -6,7 +6,8 @@
 (require "syntax.rkt" "types.rkt" "sugar.rkt"
          "../common.rkt" "../programs.rkt" "../interface.rkt")
 
-(provide (struct-out rule) *rules* *simplify-rules* *fp-safe-simplify-rules*)
+(provide (struct-out rule) *rules* *simplify-rules* *fp-safe-simplify-rules*
+         load-ruler-rules)
 (module+ internals (provide define-ruleset define-ruleset* register-ruleset!
                             *rulesets* generate-rules-for *templated-reprs*))
 
@@ -34,7 +35,12 @@
                           identity 
                           (λ (_) (generate-missing-rules) (fp-safe-simplify-rules))))
 
-(printf "Rational rules: ~a\n" (create-rational-rules 2 3 10 #t))
+(define (load-ruler-rules)
+  (define rules (rational-rules 2 3 10 #t))
+  (displayln "In <herbie>/syntax/rules.rkt")
+  (for ([(in out) (in-dict rules)])
+    (printf "~a -> ~a\n" in out))
+)
 
 ;; Update parameters
 
