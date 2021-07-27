@@ -195,10 +195,10 @@
 ;;; Rule generation
 
 (define (load-ruler-rules)
-  (define rules (rational-rules 1 3 10 #t))
+  (define rules (rational-rules 2 3 10 #t))
   (printf "Generated: ~a rules\n" (length rules))
-  (for ([(in out) (in-dict rules)])
-    (printf "~a -> ~a\n" in out))
+  (for ([rule (in-list rules)])
+    (printf "[~a, ~a] ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
 )
 
 
