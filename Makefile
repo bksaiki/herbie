@@ -6,11 +6,14 @@ help:
 
 install:
 	cargo build --release --manifest-path=egg-herbie/Cargo.toml
+	cargo build --release --manifest-path=ruler-herbie/Cargo.toml
 	raco pkg remove --force egg-herbie && echo "Warning: uninstalling egg-herbie and reinstalling local version" || :
 	raco pkg remove --force egg-herbie-linux && echo "Warning: uninstalling egg-herbie and reinstalling local version" || :
 	raco pkg remove --force egg-herbie-windows && echo "Warning: uninstalling egg-herbie and reinstalling local version" || :
 	raco pkg remove --force egg-herbie-osx && echo "Warning: uninstalling egg-herbie and reinstalling local version" || :
 	raco pkg install ./egg-herbie
+	raco pkg install --skip-installed ./ruler-herbie
+	raco pkg update --name ruler-herbie ruler-herbie/
 	raco pkg install --skip-installed --auto --name herbie src/
 	raco pkg update --name herbie src/
 

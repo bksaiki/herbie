@@ -2,7 +2,9 @@
 
 ;; Arithmetic identities for rewriting programs.
 
-(require "../common.rkt" "../interface.rkt" "syntax.rkt" "types.rkt" "sugar.rkt")
+(require ruler-herbie)
+(require "syntax.rkt" "types.rkt" "sugar.rkt"
+         "../common.rkt" "../programs.rkt" "../interface.rkt")
 
 (provide (struct-out rule) *rules* *simplify-rules* *fp-safe-simplify-rules*)
 (module+ internals (provide define-ruleset define-ruleset* register-ruleset!
@@ -31,6 +33,8 @@
   (make-derived-parameter fp-safe-simplify-rules 
                           identity 
                           (λ (_) (generate-missing-rules) (fp-safe-simplify-rules))))
+
+(printf "Rational rules: ~a\n" (create-rational-rules 2 3 10 #t))
 
 ;; Update parameters
 

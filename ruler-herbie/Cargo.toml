@@ -1,0 +1,21 @@
+[package]
+name = "ruler-herbie"
+version = "0.1.0"
+authors = [ "Brett Saiki <bksaiki@gmail.com>" ]
+edition = "2018"
+
+[dependencies]
+ruler = { path = "../../../ruler/repo" }
+
+[lib]
+name = "ruler_herbie"
+crate-type = ["rlib", "cdylib"]
+
+[profile.test]
+debug = true
+opt-level = 1
+
+[profile.release]
+debug = true
+lto = "fat"
+codegen-units = 1
