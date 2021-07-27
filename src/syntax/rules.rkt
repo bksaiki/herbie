@@ -121,15 +121,19 @@
 (define *templated-rulesets* (make-parameter '()))
 (define *templated-reprs* (make-parameter '()))
 
+(define (register-ruleset*! name groups var-ctx rules)
+  (define rules*
+    (for/list ([r rules])
+      (match-define (list rname input output) r)
+      (rule rname input output var-ctx 'unknown)))
+  (*templated-rulesets* (cons (list rules* groups var-ctx) (*templated-rulesets*))))
+
 (define-syntax define-ruleset*
   (syntax-rules ()
     [(_ name groups [rname input output] ...)
      (define-ruleset* name groups #:type () [rname input output] ...)]
     [(_ name groups #:type ([var type] ...) [rname input output] ...)
-     (begin
-      (define name (list (rule 'rname 'input 'output '((var . type) ...) 'unknown) ...))
-      (*templated-rulesets* (cons (list name 'groups '((var . type) ...)) 
-                                  (*templated-rulesets*))))]))
+     (register-ruleset*! 'name 'groups '((var . type) ...) '((rname input output) ...))]))
 
 ;; Add existing rules in rulesets to 'active' rules
 
@@ -191,7 +195,7 @@
 ;;; Rule generation
 
 (define (load-ruler-rules)
-  (define rules (rational-rules 2 3 10 #t))
+  (define rules (rational-rules 1 3 10 #t))
   (printf "Generated: ~a rules\n" (length rules))
   (for ([(in out) (in-dict rules)])
     (printf "~a -> ~a\n" in out))
