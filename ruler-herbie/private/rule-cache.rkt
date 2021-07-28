@@ -53,4 +53,4 @@
      [else #f])]))
     
 (define (clear-cache)
-  (delete-directory cache-dir))
+  (delete-directory/files cache-dir))

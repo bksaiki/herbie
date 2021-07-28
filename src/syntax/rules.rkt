@@ -7,7 +7,7 @@
          "../common.rkt" "../programs.rkt" "../interface.rkt")
 
 (provide (struct-out rule) *rules* *simplify-rules* *fp-safe-simplify-rules*
-         load-ruler-rules)
+         load-ruler-rules clear-ruler-rules)
 (module+ internals (provide define-ruleset define-ruleset* register-ruleset!
                             *rulesets* generate-rules-for *templated-reprs*))
 
@@ -192,7 +192,7 @@
     (unless (set-member? (*reprs-with-rules*) repr)
       (add-rules-from-rulesets repr))))
 
-;;; Rule generation
+;;; Rule generation (Ruler)
 
 ; Ruler parameters
 (define iters 2)
@@ -211,18 +211,16 @@
                 (fp-safe rule)
                 (simplify rule))
             (other rule)))))
-
   ;; debug
-  ;;; (printf "normal rules\n")
-  ;;; (for ([rule (in-list other-rules)])
-  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  ;;; (printf "simplify rules\n")
-  ;;; (for ([rule (in-list simplify-rules)])
-  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  ;;; (printf "fp-safe simplify rules\n")
-  ;;; (for ([rule (in-list fp-safe-simplify-rules)])
-  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-
+  (printf "normal rules\n")
+  (for ([rule (in-list other-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  (printf "simplify rules\n")
+  (for ([rule (in-list simplify-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  (printf "fp-safe simplify rules\n")
+  (for ([rule (in-list fp-safe-simplify-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
   ;; normal rewrite rules
   (register-ruleset*! 'ruler-rational '(arithmetic)
     (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
@@ -231,7 +229,6 @@
       (list (sym-append 'ruler-rational (string->symbol (~a i)))
             (first rule)
             (second rule))))
-
   ;; simplify rules
   (register-ruleset*! 'ruler-rational '(arithmetic simplify)
     (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
@@ -240,7 +237,6 @@
       (list (sym-append 'ruler-rational (string->symbol (~a i)))
             (first rule)
             (second rule))))
-
   ;; fp-safe simplify rules
   (register-ruleset*! 'ruler-rational '(arithmetic simplify fp-safe)
     (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
@@ -250,6 +246,8 @@
             (first rule)
             (second rule)))))
 
+(define (clear-ruler-rules)
+  (clear-rule-cache))
 
 ;;; Static rules
 
@@ -284,17 +282,17 @@
   #:type ([x real])
   [count-2   (+ x x)   (* 2 x)])
 
-;;; ; Distributivity
-;;; (define-ruleset* distributivity (arithmetic simplify)
-;;;   #:type ([a real] [b real] [c real])
-;;;   [distribute-lft-in      (* a (+ b c))         (+ (* a b) (* a c))]
-;;;   [distribute-rgt-in      (* a (+ b c))         (+ (* b a) (* c a))]
-;;;   [distribute-lft-out     (+ (* a b) (* a c))   (* a (+ b c))]
-;;;   [distribute-lft-out--   (- (* a b) (* a c))   (* a (- b c))]
-;;;   [distribute-rgt-out     (+ (* b a) (* c a))   (* a (+ b c))]
-;;;   [distribute-rgt-out--   (- (* b a) (* c a))   (* a (- b c))]
-;;;   [distribute-lft1-in     (+ (* b a) a)         (* (+ b 1) a)]
-;;;   [distribute-rgt1-in     (+ a (* c a))         (* (+ c 1) a)])
+; Distributivity
+(define-ruleset* distributivity (arithmetic simplify)
+  #:type ([a real] [b real] [c real])
+  [distribute-lft-in      (* a (+ b c))         (+ (* a b) (* a c))]
+  [distribute-rgt-in      (* a (+ b c))         (+ (* b a) (* c a))]
+  [distribute-lft-out     (+ (* a b) (* a c))   (* a (+ b c))]
+  [distribute-lft-out--   (- (* a b) (* a c))   (* a (- b c))]
+  [distribute-rgt-out     (+ (* b a) (* c a))   (* a (+ b c))]
+  [distribute-rgt-out--   (- (* b a) (* c a))   (* a (- b c))]
+  [distribute-lft1-in     (+ (* b a) a)         (* (+ b 1) a)]
+  [distribute-rgt1-in     (+ a (* c a))         (* (+ c 1) a)])
 
 ;;; ; Safe Distributiviity
 ;;; (define-ruleset* distributivity-fp-safe (arithmetic simplify fp-safe)
@@ -364,11 +362,11 @@
 ;;;   [neg-sub0          (neg b)                 (- 0 b)]
 ;;;   [neg-mul-1         (neg a)                 (* -1 a)])
 
-;;; (define-ruleset* id-transform (arithmetic)
-;;;   #:type ([a real] [b real])
-;;;   [div-inv           (/ a b)               (* a (/ 1 b))]
-;;;   [un-div-inv        (* a (/ 1 b))         (/ a b)]
-;;;   [clear-num         (/ a b)               (/ 1 (/ b a))])
+(define-ruleset* id-transform (arithmetic)
+  #:type ([a real] [b real])
+  [div-inv           (/ a b)               (* a (/ 1 b))]
+  [un-div-inv        (* a (/ 1 b))         (/ a b)]
+  [clear-num         (/ a b)               (/ 1 (/ b a))])
 
 
 ;;; (define-ruleset* id-transform-fp-safe (arithmetic fp-safe)

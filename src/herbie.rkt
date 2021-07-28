@@ -71,6 +71,8 @@
    [("--pareto") "Enables Pareto-Herbie (Pherbie)"
     (*pareto-mode* #t)
     (unless timeout-set? (*timeout* pareto-timeout))]
+   [("--ruler-ignore-cache") "Forces Ruler to ignore cached rules"
+    (clear-ruler-rules)]
    #:multi
    [("-o" "--disable") flag "Disable a flag (formatted category:name)"
     (define tf (string->flag flag))

@@ -11,7 +11,8 @@
                        natural?
                        boolean?
                        (listof rule?))])
-  clear-cache)
+  (rename-out
+   [clear-cache clear-rule-cache]))
 
 (define/match (expr? thing)
   [((list elems ...)) (andmap expr? elems)]
