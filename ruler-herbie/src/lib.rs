@@ -389,7 +389,7 @@ pub unsafe extern "C" fn generate_rational_rules(
     fuzzc: u32,
     do_final: bool
 ) -> *const c_char { 
-    println!("Running Ruler-Herbie...");
+    println!("Running Ruler...");
     println!(" Iterations: {}", iters);
     println!(" Variables: {}", argc);
     println!(" Num Fuzz: {}", fuzzc);

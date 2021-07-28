@@ -1,7 +1,8 @@
 #lang racket
 
 (require "private/ruler-interface.rkt"
-         "private/ruler-fpsafe.rkt")
+         "private/rule-traits.rkt"
+         "private/rule-cache.rkt")
 
 (provide
   (contract-out
@@ -9,7 +10,8 @@
                        natural?
                        natural?
                        boolean?
-                       (listof rule?))]))
+                       (listof rule?))])
+  clear-cache)
 
 (define/match (expr? thing)
   [((list elems ...)) (andmap expr? elems)]
@@ -38,13 +40,6 @@
           (string->symbol (substring str 1))
           expr)])))
 
-(define/match (expr-size expr)
-  [((list elems ...)) (apply + (map expr-size elems))]
-  [(_) 1])
-
-(define (simplify-rule? input output)
-  (<= (expr-size output) (expr-size input)))
-
 (define (ruler-rule->rules rule)
   (cond
    [(string-contains? rule "<=>")
@@ -52,16 +47,27 @@
     (define input* (egg-expr->expr input))
     (define output* (egg-expr->expr output))
     (define fpsafe? (is-fpsafe? input* output*))
-    (list (list input* output* (simplify-rule? input* output*) fpsafe?)
-          (list output* input* (simplify-rule? output* input*) fpsafe?))]
+    (list (list input* output* (is-simplify? input* output*) fpsafe?)
+          (list output* input* (is-simplify? output* input*) fpsafe?))]
    [else
     (match-define (list input output) (string-split rule " => "))
     (define input* (egg-expr->expr input))
     (define output* (egg-expr->expr output))
     (define fpsafe? (is-fpsafe? input* output*))
-    (list (list input* output* (simplify-rule? input* output*) fpsafe?))]))
+    (list (list input* output* (is-simplify? input* output*) fpsafe?))]))
 
 (define (rational-rules iters argc fuzzc final?)
-  (define rules-str (generate-rational-rules iters argc fuzzc final?))
-  (for/fold ([rules '()]) ([str (string-split rules-str "\n")])
-    (append rules (ruler-rule->rules str))))
+  (define manifest (rule-manifest "rational" iters argc fuzzc final? '()))
+  (define cached (read-cache manifest))
+  (cond
+   [cached
+    (printf "Found rational rules in cache\n")
+    (rule-manifest-rules cached)]
+   [else
+    (define rules-str (generate-rational-rules iters argc fuzzc final?))
+    (define rules
+      (for/fold ([rules '()]) ([str (string-split rules-str "\n")])
+        (append rules (ruler-rule->rules str))))
+    (write-cache (struct-copy rule-manifest manifest
+                               [rules rules]))
+    rules]))

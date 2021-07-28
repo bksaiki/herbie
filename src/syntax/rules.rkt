@@ -213,15 +213,15 @@
             (other rule)))))
 
   ;; debug
-  (printf "normal rules\n")
-  (for ([rule (in-list other-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  (printf "simplify rules\n")
-  (for ([rule (in-list simplify-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  (printf "fp-safe simplify rules\n")
-  (for ([rule (in-list fp-safe-simplify-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "normal rules\n")
+  ;;; (for ([rule (in-list other-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "simplify rules\n")
+  ;;; (for ([rule (in-list simplify-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "fp-safe simplify rules\n")
+  ;;; (for ([rule (in-list fp-safe-simplify-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
 
   ;; normal rewrite rules
   (register-ruleset*! 'ruler-rational '(arithmetic)

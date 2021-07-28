@@ -2,7 +2,14 @@
 
 (module+ test (require rackunit))
 
-(provide is-fpsafe?)
+(provide is-simplify? is-fpsafe?)
+
+(define/match (expr-size expr)
+  [((list elems ...)) (apply + (map expr-size elems))]
+  [(_) 1])
+
+(define (is-simplify? input output)
+  (<= (expr-size output) (expr-size input)))
 
 ; Returns the result of the first clause that returns true
 ; or false otherwise

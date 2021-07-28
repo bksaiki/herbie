@@ -9,3 +9,6 @@ default.nix
 # Racket
 *.zo
 *.dep
+
+# Rules
+cache
