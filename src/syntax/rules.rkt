@@ -271,7 +271,6 @@
   (load-boolean-rules))
 
 (define (clear-ruler-rules)
-  (printf "Clearing rules\n")
   (clear-rule-cache))
 
 ;;; Static rules

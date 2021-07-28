@@ -4,12 +4,6 @@
 (require "common.rkt" "multi-command-line.rkt" "errors.rkt" "load-plugin.rkt"
          "syntax/rules.rkt" "sandbox.rkt")
 
-;; Load all the plugins
-(load-herbie-plugins)
-
-;; Load Ruler rules
-(load-ruler-rules)
-
 (lazy-require
  ["web/demo.rkt" (run-demo)]
  ["web/run.rkt" (make-report rerun-report replot-report)]
@@ -18,6 +12,10 @@
 
 (define (string->thread-count th)
   (match th ["no" #f] ["yes" (max (- (processor-count) 1) 1)] [_ (string->number th)]))
+
+(define (load-essentials)
+  (load-herbie-plugins)
+  (load-ruler-rules))
 
 (define (string->flag s)
   (match (string-split s ":")
@@ -72,7 +70,6 @@
     (*pareto-mode* #t)
     (unless timeout-set? (*timeout* pareto-timeout))]
    [("--ruler-ignore-cache") "Forces Ruler to ignore cached rules"
-    (printf "Clearing cache\n")
     (clear-ruler-rules)]
    #:multi
    [("-o" "--disable") flag "Disable a flag (formatted category:name)"
@@ -89,6 +86,7 @@
    #:subcommands
    [shell "Interact with Herbie from the shell"
     #:args ()
+    (load-essentials)
     (run-shell)]
    [web "Interact with Herbie from your browser"
     #:once-each
@@ -109,12 +107,14 @@
     [("--debug") "Whether to compute metrics and debug info"
      (set! report-debug? true)]
     #:args ()
+    (load-essentials)
     (run-demo #:quiet quiet? #:output demo-output #:log demo-log #:prefix demo-prefix #:debug report-debug? #:demo? demo? #:port demo-port #:public? demo-public)]
    [improve "Run Herbie on an FPCore file, producing an FPCore file"
     #:once-each
     [("--threads") num "How many tests to run in parallel: 'yes', 'no', or a number"
      (set! threads (string->thread-count num))]
     #:args (input output)
+    (load-essentials)
     (run-improve input output #:threads threads)]
    [report "Run Herbie on an FPCore file, producing an HTML report"
     #:once-each
@@ -127,6 +127,7 @@
     [("--debug") "Whether to compute metrics and debug info"
      (set! report-debug? true)]
     #:args (input output)
+    (load-essentials)
     (make-report (list input) #:dir output #:profile report-profile? #:debug report-debug? #:note report-note #:threads threads)]
    [reproduce "Rerun an HTML report"
     #:once-each
@@ -137,9 +138,11 @@
     [("--profile") "Whether to profile each run"
      (set! report-profile? true)]
     #:args (input output)
+    (load-essentials)
     (rerun-report input #:dir output #:profile report-profile? #:debug report-debug? #:note report-note #:threads threads)]
    [replot "Regenerate plots for an HTML report"
     #:args (input output)
+    (load-essentials)
     (replot-report input #:dir output)]
 
    #:args files
