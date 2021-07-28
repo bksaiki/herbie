@@ -2,7 +2,7 @@
 
 (require racket/place)
 (require "../common.rkt" "../sandbox.rkt" "../load-plugin.rkt" "pages.rkt"
-         "../syntax/read.rkt" "../datafile.rkt")
+         "../syntax/read.rkt" "../syntax/rules.rkt" "../datafile.rkt")
 
 (provide get-test-results)
 
@@ -48,7 +48,8 @@
     #:parameters (*flags* *num-iterations* *num-points* *timeout* *reeval-pts* *node-limit*
                   *max-find-range-depth* *pareto-mode*)
     (parameterize ([current-error-port (open-output-nowhere)]) ; hide output
-      (load-herbie-plugins))
+      (load-herbie-plugins)
+      (load-ruler-rules))
     (for ([_ (in-naturals)])
       (match-define (list 'apply self id test) (place-channel-get ch))
       (define result (run-test id test #:seed seed #:profile profile? #:debug debug? #:dir dir))

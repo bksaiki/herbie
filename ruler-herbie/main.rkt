@@ -93,7 +93,7 @@
   (define cached (read-cache manifest))
   (cond
    [cached
-    (printf "Found rational rules in cache\n")
+    (eprintf "Found rational rules in cache\n")
     (rule-manifest-rules cached)]
    [else
     (define rules-str (generate-rational-rules iters argc fuzzc final?))
@@ -109,7 +109,7 @@
   (define cached (read-cache manifest))
   (cond
    [cached
-    (printf "Found boolean rules in cache\n")
+    (eprintf "Found boolean rules in cache\n")
     (rule-manifest-rules cached)]
    [else
     (define rules-str (generate-boolean-rules iters argc fuzzc final?))
