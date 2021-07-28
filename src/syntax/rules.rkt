@@ -194,14 +194,12 @@
 
 ;;; Rule generation (Ruler)
 
-; Ruler parameters
-(define iters 2)
-(define var-count 3)
-(define fuzz-count 10)
-(define do-final? #t)
+(define (load-rational-rules)
+  (define iters 2)
+  (define var-count 3)
+  (define fuzz-count 10)
+  (define do-final? #t)
 
-; Rationals only
-(define (load-ruler-rules)
   (define rules (rational-rules iters var-count fuzz-count do-final?))
   (define-values (other-rules simplify-rules fp-safe-simplify-rules)
     (reap [other simplify fp-safe]
@@ -212,15 +210,15 @@
                 (simplify rule))
             (other rule)))))
   ;; debug
-  (printf "normal rules\n")
-  (for ([rule (in-list other-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  (printf "simplify rules\n")
-  (for ([rule (in-list simplify-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-  (printf "fp-safe simplify rules\n")
-  (for ([rule (in-list fp-safe-simplify-rules)])
-    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "non-simplify rational rules\n")
+  ;;; (for ([rule (in-list other-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "simplify rational rules\n")
+  ;;; (for ([rule (in-list simplify-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  ;;; (printf "fp-safe simplify rational rules\n")
+  ;;; (for ([rule (in-list fp-safe-simplify-rules)])
+  ;;;   (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
   ;; normal rewrite rules
   (register-ruleset*! 'ruler-rational '(arithmetic)
     (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
@@ -246,7 +244,34 @@
             (first rule)
             (second rule)))))
 
+(define (load-boolean-rules)
+  (define iters 2)
+  (define var-count 3)
+  (define fuzz-count 0)
+  (define do-final? #f)
+
+  (define rules
+    (filter third
+      (boolean-rules iters var-count fuzz-count do-final?)))
+  ;; debug
+  ;;; (printf "boolean rules\n")
+  ;;; (for ([rule (in-list rules)])
+  ;;;   (printf " ~a -> ~a\n" (first rule) (second rule)))
+  ;; boolean-rules
+  (register-ruleset! 'ruler-boolean '(boolean simplify fp-safe)
+    (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
+      (cons letter 'real))
+    (for/list ([rule (in-list rules)] [i (in-naturals 1)])
+      (list (sym-append 'ruler-rational (string->symbol (~a i)))
+            (first rule)
+            (second rule)))))
+
+(define (load-ruler-rules)
+  (load-rational-rules)
+  (load-boolean-rules))
+
 (define (clear-ruler-rules)
+  (printf "Clearing rules\n")
   (clear-rule-cache))
 
 ;;; Static rules

@@ -72,6 +72,7 @@
     (*pareto-mode* #t)
     (unless timeout-set? (*timeout* pareto-timeout))]
    [("--ruler-ignore-cache") "Forces Ruler to ignore cached rules"
+    (printf "Clearing cache\n")
     (clear-ruler-rules)]
    #:multi
    [("-o" "--disable") flag "Disable a flag (formatted category:name)"
