@@ -4,47 +4,57 @@
 
 (provide is-fpsafe?)
 
+; Returns the result of the first clause that returns true
+; or false otherwise
+(define-syntax (ormatch* stx)
+  (syntax-case stx ()
+   [(_ (vals ...)) #'#f]
+   [(_ (vals ...) [(pat ...) body ...] rest ...)
+    (let ([varc (length (syntax-e (cadr (syntax-e stx))))])
+    #`(or (match* (vals ...)
+           [(pat ...) body ...]
+           [#,(build-list varc (λ (_) #'_)) #f])
+          (ormatch* (vals ...) rest ...)))]))
+
 (define (is-fpsafe in out)
-  (match* (in out)
-   [((list '* (list 'neg a) (list 'neg a)) (list '* x x))   ; neg cancellation
+  (ormatch* (in out)
+   [((list '* (list 'neg a) (list 'neg a)) (list '* x x))   ; (* (neg x) (neg x)) => (* x x)
     (is-fpsafe a x)]
-   [((list '* (list 'fabs a) (list 'fabs a)) (list '* x x)) ; fabs cancellation
+   [((list '* (list 'fabs a) (list 'fabs a)) (list '* x x)) ; (* (fabs x) (fabs x)) => (* x x)
     (is-fpsafe a x)]
-   [((list 'neg (list '+ a b)) (list '+ x y))               ; neg distributive on +
+   [((list 'neg (list '+ a b)) (list '+ x y))               ; (neg (+ a b)) => (+ (neg a) (neg b))
     (and (is-fpsafe (list 'neg a) x) (is-fpsafe (list 'neg b) y))]
-   [((list 'neg (list '* a b)) (list '* x y))               ; neg distributive on * 
+   [((list 'neg (list '* a b)) (list '* x y))               ; (neg (* a b)) => (* (neg a) b), (* a (neg b)) 
     (or (and (is-fpsafe (list 'neg a) x) (is-fpsafe b y))
         (and (is-fpsafe a x) (is-fpsafe (list 'neg b) y)))]
-   [((list 'neg (list '/ a b)) (list '/ x y))               ; neg distributive on /
+   [((list 'neg (list '/ a b)) (list '/ x y))               ; (neg (/ a b)) => (/ (neg a) b), (/ a (neg b))
     (or (and (is-fpsafe (list 'neg a) x) (is-fpsafe b y))
         (and (is-fpsafe a x) (is-fpsafe (list 'neg b) y)))]
-   [((list 'fabs (list '* a a)) (list '* x x))              ; fabs squaring
+   [((list 'fabs (list '* a a)) (list '* x x))              ; (fabs (* a a)) => (* a a)
     (is-fpsafe a x)]
-   [((list 'fabs (list '* a b)) (list '* x y))              ; fabs distributive on * 
+   [((list 'fabs (list '* a b)) (list '* x y))              ; (fabs (* a b)) => (* (fabs a) (fabs b)) 
     (and (is-fpsafe (list 'fabs a) x) (is-fpsafe (list 'fabs b) y))]
-   [((list 'fabs (list '/ a b)) (list '/ x y))              ; fabs distributive on /
+   [((list 'fabs (list '/ a b)) (list '/ x y))              ; (fabs (/ a b)) => (/ (fabs a) (fabs b))
     (and (is-fpsafe (list 'fabs a) x) (is-fpsafe (list 'fabs b) y))]
-   [((list 'fabs (list '- a b)) (list 'fabs (list '- x y))) ; fabs, - commutativity
+   [((list 'fabs (list '- a b)) (list 'fabs (list '- x y))) ; (fabs (- a b)) => (fabs (- b a))
     (or (and (is-fpsafe a x) (is-fpsafe b y))
         (and (is-fpsafe a y) (is-fpsafe b x)))]
-   [((list 'fabs (list 'neg a)) (list 'fabs x))             ; fabs, neg cancellation
+   [((list 'fabs (list 'neg a)) (list 'fabs x))             ; (fabs (neg a)) => (fabs a)
     (is-fpsafe a x)]
-   [((list '+ a b) (list '+ x y))                           ; + commutativity; +, +
-    (or (and (is-fpsafe a x) (is-fpsafe b y))
-        (and (is-fpsafe a y) (is-fpsafe b x)))]
-   [((list '- a b) (list '- x y))                           ; -, -
+   [((list 2op a b) (list 2op x y))                         ; (op x y) => (op x y)
     (and (is-fpsafe a x) (is-fpsafe b y))]
-   [((list '* a b) (list '* x y))                           ; * commutativity; *, *
-    (or (and (is-fpsafe a x) (is-fpsafe b y))
-        (and (is-fpsafe a y) (is-fpsafe b x)))]
-   [((list '/ a b) (list '/ x y))                           ; /, /
+   [((list '+ a b) (list '+ x y))                           ; + commutativity
+    (and (is-fpsafe a y) (is-fpsafe b x))]
+   [((list '* a b) (list '* x y))                           ; * commutativity
+    (and (is-fpsafe a y) (is-fpsafe b x))]
+   [((list 1op a b) (list 1op x y))                         ; (op x) => (op)
     (and (is-fpsafe a x) (is-fpsafe b y))]
-   [((list 'neg a) (list 'neg x))                           ; neg, neg
-    (is-fpsafe a x)]
-   [((list 'fabs a) (list 'fabs x))                         ; fabs, fabs
-    (is-fpsafe a x)]
    [((list '- a b) (list '+ x y))                           ; (- a b) => (+ a (neg b))
     (and (is-fpsafe a x) (is-fpsafe (list 'neg b) y))]
+   [((list '- a 1) (list '+ x -1))                          ; (- a 1) => (+ a -1)
+    (is-fpsafe a x)]
+   [((list '- a -1) (list '+ x 1))                          ; (- a -1) => (+ a 1)
+    (is-fpsafe a x)]
    [((list 'neg (list 'neg a)) _)                           ; (neg (neg a)) => a
     (is-fpsafe a out)]
    [((list 'fabs (list 'fabs a)) (list 'fabs x))            ; (fabs (fabs a)) => (fabs a)
@@ -65,9 +75,11 @@
     (is-fpsafe a out)]
    [((list '/ a 1) _)                                       ; (/ a 1) => a
     (is-fpsafe a out)]
-   [((list '* -1 a) _)                                      ; (* -1 a) => a
+   [((list '* -1 a) _)                                      ; (* -1 a) => (neg a)
     (is-fpsafe (list 'neg a) out)]
-   [((list '* a -1) _)                                      ; (* a -1) => a
+   [((list '* a -1) _)                                      ; (* a -1) => (neg a)
+    (is-fpsafe (list 'neg a) out)]
+   [((list '/ a -1) _)                                      ; (/ a -1) => (neg a)
     (is-fpsafe (list 'neg a) out)]
    [((list '- a a) _)                                       ; (- a a) => 0
     (is-fpsafe 0 out)]
@@ -79,7 +91,7 @@
     (is-fpsafe 0 out)]
    [((list '* a 0) _)                                       ; (* a 0) => 0
     (is-fpsafe 0 out)]
-   [(_ _)  (equal? in out)]))
+   [(_ _) (equal? in out)]))
   
 (define (is-fpsafe? in out)
   (or (is-fpsafe in out) (is-fpsafe out in)))
@@ -123,6 +135,7 @@
   (check-true (is-fpsafe? '(/ a 1) 'a))
   (check-true (is-fpsafe? '(* -1 a) '(neg a)))
   (check-true (is-fpsafe? '(* a -1) '(neg a)))
+  (check-true (is-fpsafe? '(/ a -1) '(neg a)))
 
   ;; square
   (check-true (is-fpsafe? '(* (neg a) (neg a)) '(* a a)))
@@ -137,7 +150,11 @@
   (check-true (is-fpsafe? '(fabs (* a b)) '(* (fabs a) (fabs b))))
   (check-true (is-fpsafe? '(fabs (/ a b)) '(/ (fabs a) (fabs b))))
 
-  ;; other rules
+  ;; add/subtract 1
+  (check-true (is-fpsafe? '(- a 1) '(+ a -1)))
+  (check-true (is-fpsafe? '(- a -1) '(+ a 1)))
+
+  ;; non fp-safe rules
   (check-false (is-fpsafe? '(+ (+ b c)) '(+ (+ a b) c)))
   (check-false (is-fpsafe? '(+ x x) '(* 2 x)))
   (check-false (is-fpsafe? '(* a (+ b c)) '(+ (* a b) (* a c))))

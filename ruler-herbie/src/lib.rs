@@ -389,7 +389,7 @@ pub unsafe extern "C" fn generate_rational_rules(
     fuzzc: u32,
     do_final: bool
 ) -> *const c_char { 
-    println!("Starting Ruler-Herbie...");
+    println!("Running Ruler-Herbie...");
     println!(" Iterations: {}", iters);
     println!(" Variables: {}", argc);
     println!(" Num Fuzz: {}", fuzzc);
@@ -401,8 +401,6 @@ pub unsafe extern "C" fn generate_rational_rules(
     let ptr = string.as_ptr();
     std::mem::forget(string);
     drop(gag);
-
-    println!("Done");
 
     ptr
 }

@@ -194,75 +194,124 @@
 
 ;;; Rule generation
 
+; Ruler parameters
+(define iters 2)
+(define var-count 3)
+(define fuzz-count 10)
+(define do-final? #t)
+
+; Rationals only
 (define (load-ruler-rules)
-  (define rules (rational-rules 2 3 10 #t))
-  (printf "Generated: ~a rules\n" (length rules))
-  (for ([rule (in-list rules)])
-    (printf "[~a, ~a] ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
-)
+  (define rules (rational-rules iters var-count fuzz-count do-final?))
+  (define-values (other-rules simplify-rules fp-safe-simplify-rules)
+    (reap [other simplify fp-safe]
+      (for ([rule (in-list rules)])
+        (if (third rule)
+            (if (fourth rule)
+                (fp-safe rule)
+                (simplify rule))
+            (other rule)))))
+
+  ;; debug
+  (printf "normal rules\n")
+  (for ([rule (in-list other-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  (printf "simplify rules\n")
+  (for ([rule (in-list simplify-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+  (printf "fp-safe simplify rules\n")
+  (for ([rule (in-list fp-safe-simplify-rules)])
+    (printf " [~a, ~a]: ~a -> ~a\n" (third rule) (fourth rule) (first rule) (second rule)))
+
+  ;; normal rewrite rules
+  (register-ruleset*! 'ruler-rational '(arithmetic)
+    (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
+      (cons letter 'real))
+    (for/list ([rule (in-list other-rules)] [i (in-naturals 1)])
+      (list (sym-append 'ruler-rational (string->symbol (~a i)))
+            (first rule)
+            (second rule))))
+
+  ;; simplify rules
+  (register-ruleset*! 'ruler-rational '(arithmetic simplify)
+    (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
+      (cons letter 'real))
+    (for/list ([rule (in-list simplify-rules)] [i (in-naturals 1)])
+      (list (sym-append 'ruler-rational (string->symbol (~a i)))
+            (first rule)
+            (second rule))))
+
+  ;; fp-safe simplify rules
+  (register-ruleset*! 'ruler-rational '(arithmetic simplify fp-safe)
+    (for/list ([i (in-range var-count)] [letter '(a b c d e f g h i)])  ; dumb
+      (cons letter 'real))
+    (for/list ([rule (in-list fp-safe-simplify-rules)] [i (in-naturals 1)])
+      (list (sym-append 'ruler-rational (string->symbol (~a i)))
+            (first rule)
+            (second rule)))))
 
 
 ;;; Static rules
 
-; Commutativity
-(define-ruleset* commutativity (arithmetic simplify fp-safe)
-  #:type ([a real] [b real])
-  [+-commutative     (+ a b)               (+ b a)]
-  [*-commutative     (* a b)               (* b a)])
+;;; ; Commutativity
+;;; (define-ruleset* commutativity (arithmetic simplify fp-safe)
+;;;   #:type ([a real] [b real])
+;;;   [+-commutative     (+ a b)               (+ b a)]
+;;;   [*-commutative     (* a b)               (* b a)])
 
-; Associativity
-(define-ruleset* associativity (arithmetic simplify)
-  #:type ([a real] [b real] [c real])
-  [associate-+r+     (+ a (+ b c))         (+ (+ a b) c)]
-  [associate-+l+     (+ (+ a b) c)         (+ a (+ b c))]
-  [associate-+r-     (+ a (- b c))         (- (+ a b) c)]
-  [associate-+l-     (+ (- a b) c)         (- a (- b c))]
-  [associate--r+     (- a (+ b c))         (- (- a b) c)]
-  [associate--l+     (- (+ a b) c)         (+ a (- b c))]
-  [associate--l-     (- (- a b) c)         (- a (+ b c))]
-  [associate--r-     (- a (- b c))         (+ (- a b) c)]
-  [associate-*r*     (* a (* b c))         (* (* a b) c)]
-  [associate-*l*     (* (* a b) c)         (* a (* b c))]
-  [associate-*r/     (* a (/ b c))         (/ (* a b) c)]
-  [associate-*l/     (* (/ a b) c)         (/ (* a c) b)]
-  [associate-/r*     (/ a (* b c))         (/ (/ a b) c)]
-  [associate-/l*     (/ (* b c) a)         (/ b (/ a c))]
-  [associate-/r/     (/ a (/ b c))         (* (/ a b) c)]
-  [associate-/l/     (/ (/ b c) a)         (/ b (* a c))])
+;;; ; Associativity
+;;; (define-ruleset* associativity (arithmetic simplify)
+;;;   #:type ([a real] [b real] [c real])
+;;;   [associate-+r+     (+ a (+ b c))         (+ (+ a b) c)]
+;;;   [associate-+l+     (+ (+ a b) c)         (+ a (+ b c))]
+;;;   [associate-+r-     (+ a (- b c))         (- (+ a b) c)]
+;;;   [associate-+l-     (+ (- a b) c)         (- a (- b c))]
+;;;   [associate--r+     (- a (+ b c))         (- (- a b) c)]
+;;;   [associate--l+     (- (+ a b) c)         (+ a (- b c))]
+;;;   [associate--l-     (- (- a b) c)         (- a (+ b c))]
+;;;   [associate--r-     (- a (- b c))         (+ (- a b) c)]
+;;;   [associate-*r*     (* a (* b c))         (* (* a b) c)]
+;;;   [associate-*l*     (* (* a b) c)         (* a (* b c))]
+;;;   [associate-*r/     (* a (/ b c))         (/ (* a b) c)]
+;;;   [associate-*l/     (* (/ a b) c)         (/ (* a c) b)]
+;;;   [associate-/r*     (/ a (* b c))         (/ (/ a b) c)]
+;;;   [associate-/l*     (/ (* b c) a)         (/ b (/ a c))]
+;;;   [associate-/r/     (/ a (/ b c))         (* (/ a b) c)]
+;;;   [associate-/l/     (/ (/ b c) a)         (/ b (* a c))])
 
 ; Counting
 (define-ruleset* counting (arithmetic simplify)
   #:type ([x real])
   [count-2   (+ x x)   (* 2 x)])
 
-; Distributivity
-(define-ruleset* distributivity (arithmetic simplify)
-  #:type ([a real] [b real] [c real])
-  [distribute-lft-in      (* a (+ b c))         (+ (* a b) (* a c))]
-  [distribute-rgt-in      (* a (+ b c))         (+ (* b a) (* c a))]
-  [distribute-lft-out     (+ (* a b) (* a c))   (* a (+ b c))]
-  [distribute-lft-out--   (- (* a b) (* a c))   (* a (- b c))]
-  [distribute-rgt-out     (+ (* b a) (* c a))   (* a (+ b c))]
-  [distribute-rgt-out--   (- (* b a) (* c a))   (* a (- b c))]
-  [distribute-lft1-in     (+ (* b a) a)         (* (+ b 1) a)]
-  [distribute-rgt1-in     (+ a (* c a))         (* (+ c 1) a)])
+;;; ; Distributivity
+;;; (define-ruleset* distributivity (arithmetic simplify)
+;;;   #:type ([a real] [b real] [c real])
+;;;   [distribute-lft-in      (* a (+ b c))         (+ (* a b) (* a c))]
+;;;   [distribute-rgt-in      (* a (+ b c))         (+ (* b a) (* c a))]
+;;;   [distribute-lft-out     (+ (* a b) (* a c))   (* a (+ b c))]
+;;;   [distribute-lft-out--   (- (* a b) (* a c))   (* a (- b c))]
+;;;   [distribute-rgt-out     (+ (* b a) (* c a))   (* a (+ b c))]
+;;;   [distribute-rgt-out--   (- (* b a) (* c a))   (* a (- b c))]
+;;;   [distribute-lft1-in     (+ (* b a) a)         (* (+ b 1) a)]
+;;;   [distribute-rgt1-in     (+ a (* c a))         (* (+ c 1) a)])
 
-; Safe Distributiviity
-(define-ruleset* distributivity-fp-safe (arithmetic simplify fp-safe)
-  #:type ([a real] [b real])
-  [distribute-lft-neg-in  (neg (* a b))           (* (neg a) b)]
-  [distribute-rgt-neg-in  (neg (* a b))           (* a (neg b))]
-  [distribute-lft-neg-out (* (neg a) b)           (neg (* a b))]
-  [distribute-rgt-neg-out (* a (neg b))           (neg (* a b))]
-  [distribute-neg-in      (neg (+ a b))           (+ (neg a) (neg b))]
-  [distribute-neg-out     (+ (neg a) (neg b))       (neg (+ a b))]
-  [distribute-frac-neg    (/ (neg a) b)           (neg (/ a b))]
-  [distribute-neg-frac    (neg (/ a b))           (/ (neg a) b)])
+;;; ; Safe Distributiviity
+;;; (define-ruleset* distributivity-fp-safe (arithmetic simplify fp-safe)
+;;;   #:type ([a real] [b real])
+;;;   [distribute-lft-neg-in  (neg (* a b))           (* (neg a) b)]
+;;;   [distribute-rgt-neg-in  (neg (* a b))           (* a (neg b))]
+;;;   [distribute-lft-neg-out (* (neg a) b)           (neg (* a b))]
+;;;   [distribute-rgt-neg-out (* a (neg b))           (neg (* a b))]
+;;;   [distribute-neg-in      (neg (+ a b))           (+ (neg a) (neg b))]
+;;;   [distribute-neg-out     (+ (neg a) (neg b))       (neg (+ a b))]
+;;;   [distribute-frac-neg    (/ (neg a) b)           (neg (/ a b))]
+;;;   [distribute-neg-frac    (neg (/ a b))           (/ (neg a) b)])
 
-(define-ruleset* cancel-sign-fp-safe (arithmetic simplify fp-safe)
-  #:type ([a real] [b real] [c real])
-  [cancel-sign-sub      (- a (* (neg b) c))     (+ a (* b c))]
-  [cancel-sign-sub-inv  (- a (* b c))           (+ a (* (neg b) c))])
+;;; (define-ruleset* cancel-sign-fp-safe (arithmetic simplify fp-safe)
+;;;   #:type ([a real] [b real] [c real])
+;;;   [cancel-sign-sub      (- a (* (neg b) c))     (+ a (* b c))]
+;;;   [cancel-sign-sub-inv  (- a (* b c))           (+ a (* (neg b) c))])
 
 ; Difference of squares
 (define-ruleset* difference-of-squares-canonicalize (polynomials simplify)
@@ -281,50 +330,50 @@
   [flip-+     (+ a b)  (/ (- (* a a) (* b b)) (- a b))]
   [flip--     (- a b)  (/ (- (* a a) (* b b)) (+ a b))])
 
-; Identity
-(define-ruleset* id-reduce (arithmetic simplify)
-  #:type ([a real])
-  [remove-double-div (/ 1 (/ 1 a))         a]
-  [rgt-mult-inverse  (* a (/ 1 a))         1]
-  [lft-mult-inverse  (* (/ 1 a) a)         1])
+;;; ; Identity
+;;; (define-ruleset* id-reduce (arithmetic simplify)
+;;;   #:type ([a real])
+;;;   [remove-double-div (/ 1 (/ 1 a))         a]
+;;;   [rgt-mult-inverse  (* a (/ 1 a))         1]
+;;;   [lft-mult-inverse  (* (/ 1 a) a)         1])
 
-(define-ruleset* id-reduce-fp-safe-nan (arithmetic simplify fp-safe-nan)
-  #:type ([a real])
-  [+-inverses        (- a a)               0]
-  [*-inverses        (/ a a)               1]
-  [div0              (/ 0 a)               0]
-  [mul0-lft          (* 0 a)               0]
-  [mul0-rgt          (* a 0)               0])
+;;; (define-ruleset* id-reduce-fp-safe-nan (arithmetic simplify fp-safe-nan)
+;;;   #:type ([a real])
+;;;   [+-inverses        (- a a)               0]
+;;;   [*-inverses        (/ a a)               1]
+;;;   [div0              (/ 0 a)               0]
+;;;   [mul0-lft          (* 0 a)               0]
+;;;   [mul0-rgt          (* a 0)               0])
 
-(define-ruleset* id-reduce-fp-safe (arithmetic simplify fp-safe)
-  #:type ([a real])
-  [+-lft-identity    (+ 0 a)               a]
-  [+-rgt-identity    (+ a 0)               a]
-  [--rgt-identity    (- a 0)               a]
-  [sub0-neg          (- 0 a)               (neg a)]
-  [remove-double-neg (neg (neg a))             a]
-  [*-lft-identity    (* 1 a)               a]
-  [*-rgt-identity    (* a 1)               a]
-  [/-rgt-identity    (/ a 1)               a]
-  [mul-1-neg         (* -1 a)              (neg a)])
+;;; (define-ruleset* id-reduce-fp-safe (arithmetic simplify fp-safe)
+;;;   #:type ([a real])
+;;;   [+-lft-identity    (+ 0 a)               a]
+;;;   [+-rgt-identity    (+ a 0)               a]
+;;;   [--rgt-identity    (- a 0)               a]
+;;;   [sub0-neg          (- 0 a)               (neg a)]
+;;;   [remove-double-neg (neg (neg a))             a]
+;;;   [*-lft-identity    (* 1 a)               a]
+;;;   [*-rgt-identity    (* a 1)               a]
+;;;   [/-rgt-identity    (/ a 1)               a]
+;;;   [mul-1-neg         (* -1 a)              (neg a)])
 
-(define-ruleset* nan-transform-fp-safe (arithmetic simplify fp-safe)
-  #:type ([a real] [b real])
-  [sub-neg           (- a b)               (+ a (neg b))]
-  [unsub-neg         (+ a (neg b))           (- a b)]
-  [neg-sub0          (neg b)                 (- 0 b)]
-  [neg-mul-1         (neg a)                 (* -1 a)])
+;;; (define-ruleset* nan-transform-fp-safe (arithmetic simplify fp-safe)
+;;;   #:type ([a real] [b real])
+;;;   [sub-neg           (- a b)               (+ a (neg b))]
+;;;   [unsub-neg         (+ a (neg b))           (- a b)]
+;;;   [neg-sub0          (neg b)                 (- 0 b)]
+;;;   [neg-mul-1         (neg a)                 (* -1 a)])
 
-(define-ruleset* id-transform (arithmetic)
-  #:type ([a real] [b real])
-  [div-inv           (/ a b)               (* a (/ 1 b))]
-  [un-div-inv        (* a (/ 1 b))         (/ a b)]
-  [clear-num         (/ a b)               (/ 1 (/ b a))])
+;;; (define-ruleset* id-transform (arithmetic)
+;;;   #:type ([a real] [b real])
+;;;   [div-inv           (/ a b)               (* a (/ 1 b))]
+;;;   [un-div-inv        (* a (/ 1 b))         (/ a b)]
+;;;   [clear-num         (/ a b)               (/ 1 (/ b a))])
 
 
-(define-ruleset* id-transform-fp-safe (arithmetic fp-safe)
-  #:type ([a real])
-  [*-un-lft-identity a                     (* 1 a)])
+;;; (define-ruleset* id-transform-fp-safe (arithmetic fp-safe)
+;;;   #:type ([a real])
+;;;   [*-un-lft-identity a                     (* 1 a)])
 
 ; Difference of cubes
 (define-ruleset* difference-of-cubes (polynomials)
@@ -358,25 +407,25 @@
   [rem-square-sqrt   (* (sqrt x) (sqrt x))     x]
   [rem-sqrt-square   (sqrt (* x x))     (fabs x)])
 
-(define-ruleset* squares-reduce-fp-sound (arithmetic simplify fp-safe)
-  #:type ([x real])
-  [sqr-neg           (* (neg x) (neg x))        (* x x)]
-  [sqr-abs           (* (fabs x) (fabs x))      (* x x)])
+;;; (define-ruleset* squares-reduce-fp-sound (arithmetic simplify fp-safe)
+;;;   #:type ([x real])
+;;;   [sqr-neg           (* (neg x) (neg x))        (* x x)]
+;;;   [sqr-abs           (* (fabs x) (fabs x))      (* x x)])
   
-(define-ruleset* fabs-reduce (arithmetic simplify fp-safe)
-  #:type ([x real] [a real] [b real])
-  [fabs-fabs         (fabs (fabs x))            (fabs x)]
-  [fabs-sub          (fabs (- a b))             (fabs (- b a))]
-  [fabs-neg          (fabs (neg x))             (fabs x)]
-  [fabs-sqr          (fabs (* x x))             (* x x)]
-  [fabs-mul          (fabs (* a b))             (* (fabs a) (fabs b))]
-  [fabs-div          (fabs (/ a b))             (/ (fabs a) (fabs b))])
+;;; (define-ruleset* fabs-reduce (arithmetic simplify fp-safe)
+;;;   #:type ([x real] [a real] [b real])
+;;;   [fabs-fabs         (fabs (fabs x))            (fabs x)]
+;;;   [fabs-sub          (fabs (- a b))             (fabs (- b a))]
+;;;   [fabs-neg          (fabs (neg x))             (fabs x)]
+;;;   [fabs-sqr          (fabs (* x x))             (* x x)]
+;;;   [fabs-mul          (fabs (* a b))             (* (fabs a) (fabs b))]
+;;;   [fabs-div          (fabs (/ a b))             (/ (fabs a) (fabs b))])
   
-(define-ruleset* fabs-expand (arithmetic fp-safe)
-  #:type ([x real] [a real] [b real])
-  [neg-fabs          (fabs x)                   (fabs (neg x))]
-  [mul-fabs          (* (fabs a) (fabs b))      (fabs (* a b))]
-  [div-fabs          (/ (fabs a) (fabs b))      (fabs (/ a b))])
+;;; (define-ruleset* fabs-expand (arithmetic fp-safe)
+;;;   #:type ([x real] [a real] [b real])
+;;;   [neg-fabs          (fabs x)                   (fabs (neg x))]
+;;;   [mul-fabs          (* (fabs a) (fabs b))      (fabs (* a b))]
+;;;   [div-fabs          (/ (fabs a) (fabs b))      (fabs (/ a b))])
 
 (define-ruleset* squares-transform (arithmetic)
   #:type ([x real] [y real])
