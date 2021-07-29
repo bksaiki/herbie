@@ -18,6 +18,8 @@
 ;;
 ;; Bindings are stored as association lists
 
+(define option-limit 256)
+
 (define (merge-bindings binding1 binding2)
   (define (fail . irr) #f)
   (and binding1
@@ -84,7 +86,8 @@
               (list? (rule-output rule))
               (= (length (rule-output rule)) glen)
               (eq? (car (rule-output rule)) ghead)))
-        (for ([option (matcher* expr (rule-input rule) loc (- cdepth 1))])
+        (define options (matcher* expr (rule-input rule) loc (- cdepth 1)))
+        (for ([option (in-list options)] [i (in-range option-limit)])
           ;; Each option is a list of change lists
           (sow (cons (change rule (reverse loc) (cdr option)) (car option)))))))
 
@@ -123,9 +126,11 @@
              (define child-options ; (list (list ((list cng) * bnd)))
                (for/list ([i (in-naturals)] [sube expr] [subp pattern] #:when (> i 0))
                  ;; Note: fuel is "depth" not "cdepth", because we're recursing to a child
+                 ;; Also bail if # of options is too high
                  (define options (matcher* sube subp (cons i loc) depth))
-                 (when (null? options) (k)) ;; Early exit 
-                 options))
+                 (if (< 0 (length options) option-limit)
+                     options
+                     (k)))) ;; Early exit
              (reduce-children sow (apply cartesian-product child-options))))
 
          (when (and (> cdepth 0)

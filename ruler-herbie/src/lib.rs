@@ -57,7 +57,7 @@ impl HerbieLanguage for Rational {
             string.push_str(&eq.rhs.to_string());
             string.push('\n');
         }
-        
+
         string
     }
 }
