@@ -53,4 +53,5 @@
      [else #f])]))
     
 (define (clear-cache)
-  (delete-directory/files cache-dir))
+  (when (directory-exists? cache-dir)
+    (delete-directory/files cache-dir)))
