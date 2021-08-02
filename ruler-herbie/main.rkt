@@ -119,3 +119,30 @@
     (write-cache (struct-copy rule-manifest manifest
                                [rules rules]))
     rules]))
+
+(module+ main
+  (define iters 2)
+  (define argc 3)
+  (define fuzzc 0)
+  (define final? #f)
+  (command-line
+   #:program "ruler"
+   #:once-each
+   [("--iters") num "Number of iterations"
+    (set! iters (string->number num))]
+   [("--variables") num "Number of variables"
+    (set! argc (string->number num))]
+   [("--num-fuzz") num "Number of fuzzing iterations"
+    (set! fuzzc (string->number num))]
+   [("--do-final-run") "Do final rewrite phase"
+    (set! final? #t)]
+   #:args (mode)
+   (match (string->symbol mode)
+    ['rational
+     (rational-rules iters argc fuzzc final?)
+     (void)]
+    ['boolean
+      (boolean-rules iters argc fuzzc final?)
+      (void)]
+    ['clear (clear-cache)]
+    [_ (error 'main "Unknown (Herbie) domain for Ruler")])))

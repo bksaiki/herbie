@@ -17,6 +17,11 @@ install:
 	raco pkg install --skip-installed --auto --name herbie src/
 	raco pkg update --name herbie src/
 
+# Ruler-powered rule generation
+rules:
+	racket ruler-herbie/main.rkt --iters 2 --variables 3 --num-fuzz 10 --do-final-run rational
+	racket ruler-herbie/main.rkt --iters 2 --variables 3 boolean
+
 nightly: install
 	bash infra/nightly.sh reports
 
