@@ -11,11 +11,11 @@
                             natural?
                             boolean?
                             (listof rule?))]
-   [boolean-rules (-> exact-positive-integer?
-                       natural?
-                       natural?
-                       boolean?
-                       (listof rule?))])
+   [make-boolean-rules (-> exact-positive-integer?
+                           natural?
+                           natural?
+                           boolean?
+                           (listof rule?))])
   (rename-out
    [clear-cache clear-rule-cache]))
 
@@ -91,7 +91,7 @@
   (for/fold ([rules '()]) ([r (in-list rules)])
     (append rules (fp-ruler-rule->rules r))))
 
-(define (boolean-rules iters argc fuzzc final?)
+(define (make-boolean-rules iters argc fuzzc final?)
   (define manifest (rule-manifest "boolean" iters argc fuzzc final? '()))
   (define cached (read-cache manifest))
   (define rules
@@ -129,7 +129,7 @@
       (make-rational-rules iters argc fuzzc final?)
       (void)]
     ['boolean
-      (boolean-rules iters argc fuzzc final?)
+      (make-boolean-rules iters argc fuzzc final?)
       (void)]
     ['clear (clear-cache)]
     [_ (error 'main "Unknown (Herbie) domain for Ruler")])))

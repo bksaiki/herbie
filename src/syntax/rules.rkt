@@ -199,7 +199,7 @@
   (define fuzz-count 10)
   (define do-final? #t)
 
-  (define rules (rational-rules iters var-count fuzz-count do-final?))
+  (define rules (make-rational-rules iters var-count fuzz-count do-final?))
   (define-values (other-rules simplify-rules fp-safe-simplify-rules)
     (reap [other simplify fp-safe]
       (for ([rule (in-list rules)])
@@ -251,7 +251,7 @@
 
   (define rules
     (filter third
-      (boolean-rules iters var-count fuzz-count do-final?)))
+      (make-boolean-rules iters var-count fuzz-count do-final?)))
   ;; debug
   ;;; (printf "boolean rules\n")
   ;;; (for ([rule (in-list rules)])

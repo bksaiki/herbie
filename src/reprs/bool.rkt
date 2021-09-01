@@ -40,8 +40,8 @@
 
 (define-ruleset bool-reduce (bools simplify fp-safe)
   #:type ([a bool] [b bool])
-  [not-true     (not TRUE)       FALSE]
-  [not-false    (not FALSE)      TRUE]
+  [not-true     (not (TRUE))      (FALSE)]
+  [not-false    (not (FALSE))     (TRUE)]
   ;;; [not-not      (not (not a))    a]
   [not-and      (not (and a b))  (or  (not a) (not b))]
   [not-or       (not (or  a b))  (and (not a) (not b))]
