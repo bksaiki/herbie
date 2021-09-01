@@ -2,39 +2,41 @@
 
 (require pkg/lib json)
 
-(provide (struct-out rule-manifest) write-cache read-cache clear-cache)
-
-(struct rule-manifest (name iters varc fuzzc final? rules))
+(provide (struct-out rule-manifest)
+         (struct-out ruler-rule)
+         read-cache clear-cache
+         make-cache-directory)
 
 (define cache-dir (build-path (pkg-directory "ruler-herbie") "cache"))
 
-(define (manifest->json manifest)
-  (make-hash
-    `((name . ,(rule-manifest-name manifest))
-      (iters . ,(~a (rule-manifest-iters manifest)))
-      (varc . ,(~a (rule-manifest-varc manifest)))
-      (fuzzc . ,(~a (rule-manifest-fuzzc manifest)))
-      (final . ,(~a (rule-manifest-final? manifest)))
-      (rules . ,(~a (rule-manifest-rules manifest))))))
+(struct ruler-rule (lhs rhs bi?))
+(struct rule-manifest (name iters varc fuzzc final? rules))
+
+(define (rule-manifest=? x y)
+  (and (equal? (rule-manifest-iters x) (rule-manifest-iters y))
+       (equal? (rule-manifest-varc x) (rule-manifest-varc y))
+       (equal? (rule-manifest-fuzzc x) (rule-manifest-fuzzc y))
+       (equal? (rule-manifest-final? x) (rule-manifest-final? y))))
+
+(define (json->rules eqs)
+  (for/list ([r (in-list eqs)])
+    (let ([get (λ (k) (hash-ref r k))])
+      (ruler-rule (get 'lhs)
+                  (get 'rhs)
+                  (get 'bidirectional)))))
 
 (define (json->manifest file)
   (define json (call-with-input-file file read-json))
-  (define parse-string (λ (s) (if s (call-with-input-string s read) #f)))
-  (define get (λ (k) (hash-ref json k)))
-  (rule-manifest (get 'name)
-                 (parse-string (get 'iters))
-                 (parse-string (get 'varc))
-                 (parse-string (get 'fuzzc))
-                 (parse-string (get 'final))
-                 (parse-string (get 'rules))))
-
-(define (write-cache manifest)
-  (define file-name (format "~a.json" (rule-manifest-name manifest)))
-  (unless (directory-exists? cache-dir)
-    (make-directory cache-dir))
-  (call-with-output-file (build-path cache-dir file-name)
-    #:exists 'replace
-    (λ (o) (write-json (manifest->json manifest) o))))
+  (define params (hash-ref json 'params))
+  (define get-param (λ (k) (hash-ref params k)))
+  (rule-manifest (let ([p0 (string->path (get-param 'outfile))])
+                   (let-values ([(d f _) (split-path p0)])
+                    (path->string (path-replace-suffix f ""))))
+                 (get-param 'iters)
+                 (get-param 'variables)
+                 (get-param 'num_fuzz)
+                 (get-param 'do_final_run)
+                 (json->rules (hash-ref json 'eqs))))
 
 (define (read-cache manifest)
   (define file-name (format "~a.json" (rule-manifest-name manifest)))
@@ -44,14 +46,12 @@
    [(not (file-exists? file-path)) #f]
    [else
     (define cached (json->manifest file-path))
-    (cond
-     [(and (equal? (rule-manifest-iters manifest) (rule-manifest-iters cached))
-           (equal? (rule-manifest-varc manifest) (rule-manifest-varc cached))
-           (equal? (rule-manifest-fuzzc manifest) (rule-manifest-fuzzc cached))
-           (equal? (rule-manifest-final? manifest) (rule-manifest-final? cached)))
-      cached]
-     [else #f])]))
+    (and (rule-manifest=? manifest cached) cached)]))
     
 (define (clear-cache)
   (when (directory-exists? cache-dir)
     (delete-directory/files cache-dir)))
+
+(define (make-cache-directory)
+  (unless (directory-exists? cache-dir)
+    (make-directory cache-dir)))

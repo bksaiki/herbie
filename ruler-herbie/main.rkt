@@ -6,11 +6,11 @@
 
 (provide
   (contract-out
-   [rational-rules (-> exact-positive-integer?
-                       natural?
-                       natural?
-                       boolean?
-                       (listof rule?))]
+   [make-rational-rules (-> exact-positive-integer?
+                            natural?
+                            natural?
+                            boolean?
+                            (listof rule?))]
    [boolean-rules (-> exact-positive-integer?
                        natural?
                        natural?
@@ -40,13 +40,8 @@
       [_ (let ([change (car changes)])
            (loop (string-replace str (car change) (cdr change)) (cdr changes)))])))
 
-(define (egg-expr->expr expr [mode 'float])
-  (define replace-table `(("~" . ,(if (equal? mode 'float) "neg" "not"))
-                          ("&" . "and")
-                          ("|" . "or")
-                          ("true" . "TRUE")
-                          ("false" . "FALSE")))
-  (define datum (read (open-input-string (string-replace* expr replace-table))))
+(define (egg-expr->expr expr [rt '()])
+  (define datum (read (open-input-string (string-replace* expr rt))))
   (let loop ([expr datum])
     (match expr
      [(list op args ...) (cons op (map loop args))]
@@ -58,67 +53,59 @@
           expr)])))
 
 (define (fp-ruler-rule->rules rule)
-  (cond
-   [(string-contains? rule "<=>")
-    (match-define (list input output) (string-split rule " <=> "))
-    (define input* (egg-expr->expr input))
-    (define output* (egg-expr->expr output))
-    (define fpsafe? (is-fpsafe? input* output*))
-    (list (list input* output* (is-simplify? input* output*) fpsafe?)
-          (list output* input* (is-simplify? output* input*) fpsafe?))]
-   [else
-    (match-define (list input output) (string-split rule " => "))
-    (define input* (egg-expr->expr input))
-    (define output* (egg-expr->expr output))
-    (define fpsafe? (is-fpsafe? input* output*))
-    (list (list input* output* (is-simplify? input* output*) fpsafe?))]))
+  (match-define (ruler-rule lhs rhs bi?) rule)
+  (define rt '(("~" . "neg")))
+  (define input (egg-expr->expr lhs rt))
+  (define output (egg-expr->expr rhs rt))
+  (define fpsafe? (is-fpsafe? input output))
+  (if bi?
+      (list (list input output (is-simplify? input output) fpsafe?)
+            (list output input (is-simplify? output input) fpsafe?))
+      (list (list input output (is-simplify? input output) fpsafe?))))
+
 
 (define (bool-ruler-rule->rules rule)
-  (cond
-   [(string-contains? rule "<=>")
-    (match-define (list input output) (string-split rule " <=> "))
-    (define input* (egg-expr->expr input 'bool))
-    (define output* (egg-expr->expr output 'bool))
-    (list (list input* output* (is-simplify? input* output*) #t)
-          (list output* input* (is-simplify? output* input*) #t))]
-   [else
-    (match-define (list input output) (string-split rule " => "))
-    (define input* (egg-expr->expr input 'bool))
-    (define output* (egg-expr->expr output 'bool))
-    (list (list input* output* (is-simplify? input* output*) #t))]))
+  (match-define (ruler-rule lhs rhs bi?) rule)
+  (define rt '(("~" . "not") ("|" . "or") ("&" . "and")
+               ("true" . "(TRUE)") ("false" . "(FALSE)")))
+  (define input (egg-expr->expr lhs rt))
+  (define output (egg-expr->expr rhs rt))
+  (if bi?
+      (list (list input output (is-simplify? input output) #t)
+            (list output input (is-simplify? output input) #t))
+      (list (list input output (is-simplify? input output) #t))))
 
 
-(define (rational-rules iters argc fuzzc final?)
+(define (make-rational-rules iters argc fuzzc final?)
   (define manifest (rule-manifest "rational" iters argc fuzzc final? '()))
   (define cached (read-cache manifest))
-  (cond
-   [cached
-    (eprintf "Found rational rules in cache\n")
-    (rule-manifest-rules cached)]
-   [else
-    (define rules-str (generate-rational-rules iters argc fuzzc final?))
-    (define rules
-      (for/fold ([rules '()]) ([str (string-split rules-str "\n")])
-        (append rules (fp-ruler-rule->rules str))))
-    (write-cache (struct-copy rule-manifest manifest
-                               [rules rules]))
-    rules]))
+  (define rules
+    (if cached
+        (begin0 (rule-manifest-rules cached)
+          (eprintf "Found rational rules in cache\n"))
+        (begin
+          (make-cache-directory)
+          (generate-rational-rules iters argc fuzzc final?)
+          (let ([cached (read-cache manifest)])
+            (rule-manifest-rules cached)))))
+  (for/fold ([rules '()]) ([r (in-list rules)])
+    (append rules (fp-ruler-rule->rules r))))
 
 (define (boolean-rules iters argc fuzzc final?)
   (define manifest (rule-manifest "boolean" iters argc fuzzc final? '()))
   (define cached (read-cache manifest))
-  (cond
-   [cached
-    (eprintf "Found boolean rules in cache\n")
-    (rule-manifest-rules cached)]
-   [else
-    (define rules-str (generate-boolean-rules iters argc fuzzc final?))
-    (define rules
-      (for/fold ([rules '()]) ([str (string-split rules-str "\n")])
-        (append rules (bool-ruler-rule->rules str))))
-    (write-cache (struct-copy rule-manifest manifest
-                               [rules rules]))
-    rules]))
+  (define rules
+    (if cached
+        (begin0 (rule-manifest-rules cached)
+          (eprintf "Found boolean rules in cache\n"))
+        (begin
+          (make-cache-directory)
+          (generate-boolean-rules iters argc fuzzc final?)
+          (let ([cached (read-cache manifest)])
+            (rule-manifest-rules cached)))))
+  (for/fold ([rules '()]) ([r (in-list rules)])
+    (append rules (bool-ruler-rule->rules r))))
+
 
 (module+ main
   (define iters 2)
@@ -139,8 +126,8 @@
    #:args (mode)
    (match (string->symbol mode)
     ['rational
-     (rational-rules iters argc fuzzc final?)
-     (void)]
+      (make-rational-rules iters argc fuzzc final?)
+      (void)]
     ['boolean
       (boolean-rules iters argc fuzzc final?)
       (void)]

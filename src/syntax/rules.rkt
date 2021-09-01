@@ -3,8 +3,7 @@
 ;; Arithmetic identities for rewriting programs.
 
 (require ruler-herbie)
-(require "syntax.rkt" "types.rkt" "sugar.rkt"
-         "../common.rkt" "../programs.rkt" "../interface.rkt")
+(require "../common.rkt" "../interface.rkt" "syntax.rkt" "types.rkt" "sugar.rkt")
 
 (provide (struct-out rule) *rules* *simplify-rules* *fp-safe-simplify-rules*
          load-ruler-rules clear-ruler-rules)
