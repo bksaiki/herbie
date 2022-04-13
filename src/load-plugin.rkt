@@ -28,13 +28,53 @@
 
 (register-generator! generate-builtins)
 
-(define (load-herbie-plugins)
-  (load-herbie-builtins)    ; automatically load default representations
-  (for ([dir (find-relevant-directories '(herbie-plugin))])
+
+;; Gets the path of the executable
+(define (get-exe-directory)
+  (define-values (base name dir?)
+    (split-path (path->complete-path (find-system-path 'run-file))))
+  base)
+
+(define plugin-directory
+  (simplify-path
+    (build-path (get-exe-directory)
+                (case (system-type)
+                 [(windows) "plugins/"]
+                 [else "../plugins/"]))))
+
+;; Loads Herbie plugins locally, assuming from `../plugins/` (or `plugins/` on Windows)
+;; relative to the executable. Assumes running a standalone executable created by
+;; `raco exe` and `raco distribute`
+(define (load-local-herbie-plugins)
+  (define subdirs
+    (filter-map
+      (λ (name) (let ([dir (build-path plugin-directory name)])
+                  (and (directory-exists? dir) dir)))
+      (directory-list plugin-directory)))
+  (for ([subdir (in-list subdirs)])
     (define info
-      (with-handlers ([exn:fail:filesystem? (const false)])
-        (get-info/full dir)))
+      (with-handlers ([exn:fail:filesystem? (const #f)])
+        (get-info/full subdir)))
     (define value (info 'herbie-plugin (const false)))
     (when value
-      (with-handlers ([exn:fail:filesystem:missing-module? void])
-        (dynamic-require value #f)))))
+      (let ([main (build-path subdir "main.rkt")])
+        (printf "loading ~a\n" main)
+        (dynamic-require main #f)))))
+
+;; loads Herbie plugins using information from `raco setup`
+(define (load-herbie-plugins-from-collects)
+  (for ([dir (find-relevant-directories '(herbie-plugin))])
+      (define info
+        (with-handlers ([exn:fail:filesystem? (const false)])
+          (get-info/full dir)))
+      (define value (info 'herbie-plugin (const false)))
+      (when value
+        (with-handlers ([exn:fail:filesystem:missing-module? void])
+          (dynamic-require value #f)))))
+
+;; loads all Herbie plugins (builtin / and user-installed)
+(define (load-herbie-plugins)
+  (load-herbie-builtins)    ; automatically load default representations
+  (if (null? (current-library-collection-paths))  ;; most-likely running in standalone executable
+      (load-local-herbie-plugins)
+      (load-herbie-plugins-from-collects)))
