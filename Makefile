@@ -20,7 +20,7 @@ distribution: minimal-distribution
 minimal-distribution:
 	mkdir -p herbie-compiled/ herbie-compiled/plugins
 	cp README.md LICENSE.md logo.png herbie-compiled/
-	raco exe -o herbie ++lib racket/lang/reader --orig-exe --embed-dlls --vv src/herbie.rkt
+	raco exe -o herbie ++lib racket/lang/reader --orig-exe --embed-dlls --vv src/embed.rkt
 	[ ! -f herbie.exe ] || (raco distribute herbie-compiled herbie.exe && rm herbie.exe)
 	[ ! -f herbie.app ] || (raco distribute herbie-compiled herbie.app && rm herbie.app)
 	[ ! -f herbie ] || (raco distribute herbie-compiled herbie && rm herbie)

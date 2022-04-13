@@ -42,23 +42,23 @@
                  [(windows) "plugins/"]
                  [else "../plugins/"]))))
 
+(define (get-subdirectories dir)
+  (filter-map
+      (λ (name) (let ([sub-fd (build-path dir name)])
+                  (and (directory-exists? sub-fd) sub-fd)))
+      (directory-list dir)))
+
 ;; Loads Herbie plugins locally, assuming from `../plugins/` (or `plugins/` on Windows)
 ;; relative to the executable. Assumes running a standalone executable created by
-;; `raco exe` and `raco distribute`
+;; `raco exe` and `raco distribute`.
 (define (load-local-herbie-plugins)
-  (define subdirs
-    (filter-map
-      (λ (name) (let ([dir (build-path plugin-directory name)])
-                  (and (directory-exists? dir) dir)))
-      (directory-list plugin-directory)))
-  (for ([subdir (in-list subdirs)])
+  (for ([subdir (in-list (get-subdirectories plugin-directory))])
     (define info
       (with-handlers ([exn:fail:filesystem? (const #f)])
         (get-info/full subdir)))
     (define value (info 'herbie-plugin (const false)))
     (when value
       (let ([main (build-path subdir "main.rkt")])
-        (printf "loading ~a\n" main)
         (dynamic-require main #f)))))
 
 ;; loads Herbie plugins using information from `raco setup`
