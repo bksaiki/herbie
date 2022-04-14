@@ -2,7 +2,7 @@
 
 ;; Builtin single-precision plugin (:precision binary32)
 
-(require math/flonum math/bigfloat)
+(require math/bigfloat)
 (require "../plugin.rkt" "bool.rkt" "binary64.rkt")
 
 (module+ test (require rackunit))

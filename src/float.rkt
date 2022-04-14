@@ -1,7 +1,7 @@
 #lang racket
 
 
-(require math/bigfloat math/base)
+(require math/bigfloat (only-in math/base random-bits))
 (require "common.rkt" "interface.rkt" "syntax/types.rkt" "errors.rkt")
 (module+ test (require rackunit "load-plugin.rkt"))
 

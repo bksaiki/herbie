@@ -44,8 +44,9 @@
 
 (define (get-subdirectories dir)
   (filter-map
-      (λ (name) (let ([sub-fd (build-path dir name)])
-                  (and (directory-exists? sub-fd) sub-fd)))
+      (λ (name)
+        (let ([sub-fd (build-path dir name)])
+          (and (directory-exists? sub-fd) sub-fd)))
       (directory-list dir)))
 
 ;; Loads Herbie plugins locally, assuming from `../plugins/` (or `plugins/` on Windows)
@@ -74,7 +75,7 @@
 
 ;; loads all Herbie plugins (builtin / and user-installed)
 (define (load-herbie-plugins)
-  (load-herbie-builtins)    ; automatically load default representations
+  (load-herbie-builtins)                          ;; automatically load default representations
   (if (null? (current-library-collection-paths))  ;; most-likely running in standalone executable
       (load-local-herbie-plugins)
       (load-herbie-plugins-from-collects)))

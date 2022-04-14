@@ -1,6 +1,6 @@
 #lang racket
 
-(require racket/runtime-path math/base)
+(require racket/runtime-path)
 (require "config.rkt" "debug.rkt")
 (module+ test (require rackunit))
 

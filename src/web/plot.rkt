@@ -1,6 +1,6 @@
 #lang racket
 
-(require math/bigfloat math/flonum plot/no-gui racket/draw)
+(require plot/no-gui (only-in racket/draw make-bitmap))
 (require "../common.rkt" "../points.rkt" "../float.rkt" "../programs.rkt"
          "../syntax/syntax.rkt" "../syntax/types.rkt" "../syntax/read.rkt"
          "../alternative.rkt" "../interface.rkt" "../core/regimes.rkt" 

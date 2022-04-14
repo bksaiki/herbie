@@ -1,6 +1,6 @@
 #lang racket
 
-(require math/number-theory)
+(require (only-in math/number-theory factorial))
 (require "../common.rkt")
 (require "../programs.rkt")
 (require "reduce.rkt")

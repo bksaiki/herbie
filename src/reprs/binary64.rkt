@@ -2,7 +2,7 @@
 
 ;; Builtin double-precision plugin (:precision binary64)
 
-(require math/flonum math/bigfloat)
+(require (only-in math/flonum ordinal->flonum flonum->ordinal) math/bigfloat)
 (require "../plugin.rkt" "bool.rkt")
 
 (define (shift bits fn)

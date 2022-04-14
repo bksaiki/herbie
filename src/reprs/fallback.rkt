@@ -2,7 +2,11 @@
 
 ;; Builtin fallback plugin (:precision racket)
 
-(require math/base math/bigfloat math/flonum math/special-functions)
+(require (only-in math/base asinh acosh atanh)
+         (only-in math/special-functions erf erfc gamma log-gamma)
+         (only-in math/flonum ordinal->flonum flonum->ordinal)
+          math/bigfloat)
+
 (require "../plugin.rkt" "bool.rkt")
 
 (define (shift bits fn)

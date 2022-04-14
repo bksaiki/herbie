@@ -1,9 +1,19 @@
 #lang racket
-(require openssl/sha1 (rename-in xml [location? xml-location?]))
-(require web-server/servlet web-server/servlet-env web-server/dispatch
-         web-server/dispatchers/dispatch web-server/dispatch/extend
-         web-server/http/bindings web-server/configuration/responders
-         web-server/managers/none)
+(require (only-in openssl/sha1 sha1)
+         web-server/configuration/responders  ; gen-file-not-found-responder
+         web-server/dispatch
+         web-server/dispatchers/dispatch      ; next-dispatcher
+         web-server/dispatch/extend           ; define-coercision-match-expander
+         web-server/http/bindings             ; request-bindings, extract-bindings
+         web-server/http/redirect             ; redirect-to see-other
+         web-server/http/request-structs      ; header
+         web-server/http/response-structs     ; response response/full TEXT/HTML-MIME-TYPE
+         web-server/http/xexpr                ; response/xexpr
+         web-server/managers/none             ; create-none-manager
+         web-server/servlet-env               ; serve/servlet
+         (rename-in xml
+          [location? xml-location?]))
+
 (require "../common.rkt" "../config.rkt" "../syntax/read.rkt" "../errors.rkt")
 (require "../syntax/syntax-check.rkt" "../syntax/type-check.rkt" "../sandbox.rkt")
 (require "../datafile.rkt" "pages.rkt" "make-report.rkt")

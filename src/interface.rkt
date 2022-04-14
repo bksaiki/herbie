@@ -1,6 +1,6 @@
 #lang racket
 
-(require math/bigfloat math/flonum)
+(require (only-in math/bigfloat bf bigfloat->real))
 (require "syntax/types.rkt" "errors.rkt")
 
 (provide (struct-out representation) get-representation

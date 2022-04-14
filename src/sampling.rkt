@@ -1,5 +1,5 @@
 #lang racket
-(require math/bigfloat rival math/base
+(require (only-in math/base random-integer) math/bigfloat rival
          (only-in fpbench interval range-table-ref condition->range-table [expr? fpcore-expr?]))
 (require "searchreals.rkt" "programs.rkt" "config.rkt" "errors.rkt" "common.rkt"
          "float.rkt" "alternative.rkt" "interface.rkt"
