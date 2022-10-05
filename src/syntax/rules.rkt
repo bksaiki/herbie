@@ -262,10 +262,10 @@
   [pow-sqr               (* (pow a b) (pow a b)) (pow a (* 2 b))]
   )
 
-(define-ruleset* difference-of-squares-flip (polynomials)
-  #:type ([a real] [b real])
-  [flip-+     (+ a b)  (/ (- (* a a) (* b b)) (- a b))]
-  [flip--     (- a b)  (/ (- (* a a) (* b b)) (+ a b))])
+; (define-ruleset* difference-of-squares-flip (polynomials)
+;   #:type ([a real] [b real])
+;   [flip-+     (+ a b)  (/ (- (* a a) (* b b)) (- a b))]
+;   [flip--     (- a b)  (/ (- (* a a) (* b b)) (+ a b))])
 
 ; Identity
 (define-ruleset* id-reduce (arithmetic simplify)
