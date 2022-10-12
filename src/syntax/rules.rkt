@@ -253,13 +253,13 @@
 ; Difference of squares
 (define-ruleset* difference-of-squares-canonicalize (polynomials simplify)
   #:type ([a real] [b real])
-  [swap-sqr              (* (* a b) (* a b))   (* (* a a) (* b b))]
-  [unswap-sqr            (* (* a a) (* b b))   (* (* a b) (* a b))]
-  [difference-of-squares (- (* a a) (* b b))   (* (+ a b) (- a b))]
-  [difference-of-sqr-1   (- (* a a) 1)         (* (+ a 1) (- a 1))]
-  [difference-of-sqr--1  (+ (* a a) -1)        (* (+ a 1) (- a 1))]
-  [sqr-pow               (pow a b)             (* (pow a (/ b 2)) (pow a (/ b 2)))]
-  [pow-sqr               (* (pow a b) (pow a b)) (pow a (* 2 b))]
+  ; [swap-sqr              (* (* a b) (* a b))   (* (* a a) (* b b))]
+  ; [unswap-sqr            (* (* a a) (* b b))   (* (* a b) (* a b))]
+  ; [difference-of-squares (- (* a a) (* b b))   (* (+ a b) (- a b))]
+  ; [difference-of-sqr-1   (- (* a a) 1)         (* (+ a 1) (- a 1))]
+  ; [difference-of-sqr--1  (+ (* a a) -1)        (* (+ a 1) (- a 1))]
+  ; [sqr-pow               (pow a b)             (* (pow a (/ b 2)) (pow a (/ b 2)))]
+  ; [pow-sqr               (* (pow a b) (pow a b)) (pow a (* 2 b))]
   )
 
 ; (define-ruleset* difference-of-squares-flip (polynomials)
@@ -313,16 +313,16 @@
   [*-un-lft-identity a                     (* 1 a)])
 
 ; Difference of cubes
-(define-ruleset* difference-of-cubes (polynomials)
-  #:type ([a real] [b real])
-  [sum-cubes        (+ (pow a 3) (pow b 3))
-                    (* (+ (* a a) (- (* b b) (* a b))) (+ a b))]
-  [difference-cubes (- (pow a 3) (pow b 3))
-                    (* (+ (* a a) (+ (* b b) (* a b))) (- a b))]
-  [flip3-+          (+ a b)
-                    (/ (+ (pow a 3) (pow b 3)) (+ (* a a) (- (* b b) (* a b))))]
-  [flip3--          (- a b)
-                    (/ (- (pow a 3) (pow b 3)) (+ (* a a) (+ (* b b) (* a b))))])
+; (define-ruleset* difference-of-cubes (polynomials)
+;   #:type ([a real] [b real])
+;   [sum-cubes        (+ (pow a 3) (pow b 3))
+;                     (* (+ (* a a) (- (* b b) (* a b))) (+ a b))]
+;   [difference-cubes (- (pow a 3) (pow b 3))
+;                     (* (+ (* a a) (+ (* b b) (* a b))) (- a b))]
+;   [flip3-+          (+ a b)
+;                     (/ (+ (pow a 3) (pow b 3)) (+ (* a a) (- (* b b) (* a b))))]
+;   [flip3--          (- a b)
+;                     (/ (- (pow a 3) (pow b 3)) (+ (* a a) (+ (* b b) (* a b))))])
 
 ; Dealing with fractions
 (define-ruleset* fractions-distribute (fractions simplify)
@@ -339,10 +339,10 @@
   [frac-2neg   (/ a b)              (/ (neg a) (neg b))])
 
 ; Square root
-(define-ruleset* squares-reduce (arithmetic simplify)
-  #:type ([x real])
-  [rem-square-sqrt   (* (sqrt x) (sqrt x))     x]
-  [rem-sqrt-square   (sqrt (* x x))     (fabs x)])
+; (define-ruleset* squares-reduce (arithmetic simplify)
+;   #:type ([x real])
+;   [rem-square-sqrt   (* (sqrt x) (sqrt x))     x]
+;   [rem-sqrt-square   (sqrt (* x x))     (fabs x)])
 
 (define-ruleset* squares-reduce-fp-sound (arithmetic simplify fp-safe)
   #:type ([x real])
@@ -364,363 +364,363 @@
   [mul-fabs          (* (fabs a) (fabs b))      (fabs (* a b))]
   [div-fabs          (/ (fabs a) (fabs b))      (fabs (/ a b))])
 
-(define-ruleset* squares-transform (arithmetic)
-  #:type ([x real] [y real])
-  [sqrt-prod         (sqrt (* x y))         (* (sqrt x) (sqrt y))]
-  [sqrt-div          (sqrt (/ x y))         (/ (sqrt x) (sqrt y))]
-  [sqrt-pow1         (sqrt (pow x y))       (pow x (/ y 2))]
-  [sqrt-pow2         (pow (sqrt x) y)       (pow x (/ y 2))]
-  [sqrt-unprod       (* (sqrt x) (sqrt y))  (sqrt (* x y))]
-  [sqrt-undiv        (/ (sqrt x) (sqrt y))  (sqrt (/ x y))]
-  [add-sqr-sqrt      x                      (* (sqrt x) (sqrt x))])
+; (define-ruleset* squares-transform (arithmetic)
+;   #:type ([x real] [y real])
+;   [sqrt-prod         (sqrt (* x y))         (* (sqrt x) (sqrt y))]
+;   [sqrt-div          (sqrt (/ x y))         (/ (sqrt x) (sqrt y))]
+;   [sqrt-pow1         (sqrt (pow x y))       (pow x (/ y 2))]
+;   [sqrt-pow2         (pow (sqrt x) y)       (pow x (/ y 2))]
+;   [sqrt-unprod       (* (sqrt x) (sqrt y))  (sqrt (* x y))]
+;   [sqrt-undiv        (/ (sqrt x) (sqrt y))  (sqrt (/ x y))]
+;   [add-sqr-sqrt      x                      (* (sqrt x) (sqrt x))])
 
-; Cube root
-(define-ruleset* cubes-reduce (arithmetic simplify)
-  #:type ([x real])
-  [rem-cube-cbrt    (pow (cbrt x) 3)                    x]
-  [rem-cbrt-cube    (cbrt (pow x 3))                    x]
-  [rem-3cbrt-lft    (* (* (cbrt x) (cbrt x)) (cbrt x))  x]
-  [rem-3cbrt-rft    (* (cbrt x) (* (cbrt x) (cbrt x)))  x]
-  [cube-neg         (pow (neg x) 3)                     (neg (pow x 3))])
+; ; Cube root
+; (define-ruleset* cubes-reduce (arithmetic simplify)
+;   #:type ([x real])
+;   [rem-cube-cbrt    (pow (cbrt x) 3)                    x]
+;   [rem-cbrt-cube    (cbrt (pow x 3))                    x]
+;   [rem-3cbrt-lft    (* (* (cbrt x) (cbrt x)) (cbrt x))  x]
+;   [rem-3cbrt-rft    (* (cbrt x) (* (cbrt x) (cbrt x)))  x]
+;   [cube-neg         (pow (neg x) 3)                     (neg (pow x 3))])
 
-(define-ruleset* cubes-distribute (arithmetic simplify)
-  #:type ([x real] [y real])
-  [cube-prod       (pow (* x y) 3) (* (pow x 3) (pow y 3))]
-  [cube-div        (pow (/ x y) 3) (/ (pow x 3) (pow y 3))]
-  [cube-mult       (pow x 3)       (* x (* x x))])
+; (define-ruleset* cubes-distribute (arithmetic simplify)
+;   #:type ([x real] [y real])
+;   [cube-prod       (pow (* x y) 3) (* (pow x 3) (pow y 3))]
+;   [cube-div        (pow (/ x y) 3) (/ (pow x 3) (pow y 3))]
+;   [cube-mult       (pow x 3)       (* x (* x x))])
 
-(define-ruleset* cubes-transform (arithmetic)
-  #:type ([x real] [y real])
-  [cbrt-prod         (cbrt (* x y))           (* (cbrt x) (cbrt y))]
-  [cbrt-div          (cbrt (/ x y))           (/ (cbrt x) (cbrt y))]
-  [cbrt-unprod       (* (cbrt x) (cbrt y))    (cbrt (* x y))]
-  [cbrt-undiv        (/ (cbrt x) (cbrt y))    (cbrt (/ x y))]
-  [add-cube-cbrt     x                        (* (* (cbrt x) (cbrt x)) (cbrt x))]
-  [add-cbrt-cube     x                        (cbrt (* (* x x) x))])
+; (define-ruleset* cubes-transform (arithmetic)
+;   #:type ([x real] [y real])
+;   [cbrt-prod         (cbrt (* x y))           (* (cbrt x) (cbrt y))]
+;   [cbrt-div          (cbrt (/ x y))           (/ (cbrt x) (cbrt y))]
+;   [cbrt-unprod       (* (cbrt x) (cbrt y))    (cbrt (* x y))]
+;   [cbrt-undiv        (/ (cbrt x) (cbrt y))    (cbrt (/ x y))]
+;   [add-cube-cbrt     x                        (* (* (cbrt x) (cbrt x)) (cbrt x))]
+;   [add-cbrt-cube     x                        (cbrt (* (* x x) x))])
 
-(define-ruleset* cubes-canonicalize (arithmetic simplify)
-  #:type ([x real])
-  [cube-unmult       (* x (* x x))          (pow x 3)])
+; (define-ruleset* cubes-canonicalize (arithmetic simplify)
+;   #:type ([x real])
+;   [cube-unmult       (* x (* x x))          (pow x 3)])
 
-; Exponentials
-(define-ruleset* exp-expand (exponents)
-  #:type ([x real])
-  [add-exp-log  x                    (exp (log x))]
-  [add-log-exp  x                    (log (exp x))])
+; ; Exponentials
+; (define-ruleset* exp-expand (exponents)
+;   #:type ([x real])
+;   [add-exp-log  x                    (exp (log x))]
+;   [add-log-exp  x                    (log (exp x))])
 
-(define-ruleset* exp-reduce (exponents simplify)
-  #:type ([x real])
-  [rem-exp-log  (exp (log x))        x]
-  [rem-log-exp  (log (exp x))        x])
+; (define-ruleset* exp-reduce (exponents simplify)
+;   #:type ([x real])
+;   [rem-exp-log  (exp (log x))        x]
+;   [rem-log-exp  (log (exp x))        x])
 
-(define-ruleset* exp-constants (exponents simplify fp-safe)
-  [exp-0        (exp 0)              1]
-  [exp-1-e      (exp 1)              E]
-  [1-exp        1                    (exp 0)]
-  [e-exp-1      (E)                  (exp 1)])
+; (define-ruleset* exp-constants (exponents simplify fp-safe)
+;   [exp-0        (exp 0)              1]
+;   [exp-1-e      (exp 1)              E]
+;   [1-exp        1                    (exp 0)]
+;   [e-exp-1      (E)                  (exp 1)])
 
-(define-ruleset* exp-distribute (exponents simplify)
-  #:type ([a real] [b real])
-  [exp-sum      (exp (+ a b))        (* (exp a) (exp b))]
-  [exp-neg      (exp (neg a))          (/ 1 (exp a))]
-  [exp-diff     (exp (- a b))        (/ (exp a) (exp b))])
+; (define-ruleset* exp-distribute (exponents simplify)
+;   #:type ([a real] [b real])
+;   [exp-sum      (exp (+ a b))        (* (exp a) (exp b))]
+;   [exp-neg      (exp (neg a))          (/ 1 (exp a))]
+;   [exp-diff     (exp (- a b))        (/ (exp a) (exp b))])
 
-(define-ruleset* exp-factor (exponents simplify)
-  #:type ([a real] [b real])
-  [prod-exp     (* (exp a) (exp b))  (exp (+ a b))]
-  [rec-exp      (/ 1 (exp a))        (exp (neg a))]
-  [div-exp      (/ (exp a) (exp b))  (exp (- a b))]
-  [exp-prod     (exp (* a b))        (pow (exp a) b)]
-  [exp-sqrt     (exp (/ a 2))        (sqrt (exp a))]
-  [exp-cbrt     (exp (/ a 3))        (cbrt (exp a))]
-  [exp-lft-sqr  (exp (* a 2))        (* (exp a) (exp a))]
-  [exp-lft-cube (exp (* a 3))        (pow (exp a) 3)])
+; (define-ruleset* exp-factor (exponents simplify)
+;   #:type ([a real] [b real])
+;   [prod-exp     (* (exp a) (exp b))  (exp (+ a b))]
+;   [rec-exp      (/ 1 (exp a))        (exp (neg a))]
+;   [div-exp      (/ (exp a) (exp b))  (exp (- a b))]
+;   [exp-prod     (exp (* a b))        (pow (exp a) b)]
+;   [exp-sqrt     (exp (/ a 2))        (sqrt (exp a))]
+;   [exp-cbrt     (exp (/ a 3))        (cbrt (exp a))]
+;   [exp-lft-sqr  (exp (* a 2))        (* (exp a) (exp a))]
+;   [exp-lft-cube (exp (* a 3))        (pow (exp a) 3)])
 
-; Powers
-(define-ruleset* pow-reduce (exponents simplify)
-  #:type ([a real])
-  [unpow-1        (pow a -1)                 (/ 1 a)])
+; ; Powers
+; (define-ruleset* pow-reduce (exponents simplify)
+;   #:type ([a real])
+;   [unpow-1        (pow a -1)                 (/ 1 a)])
 
-(define-ruleset* pow-reduce-fp-safe (exponents simplify fp-safe)
-  #:type ([a real])
-  [unpow1         (pow a 1)                  a])
+; (define-ruleset* pow-reduce-fp-safe (exponents simplify fp-safe)
+;   #:type ([a real])
+;   [unpow1         (pow a 1)                  a])
 
-(define-ruleset* pow-reduce-fp-safe-nan (exponents simplify fp-safe-nan)
-  #:type ([a real])
-  [unpow0         (pow a 0)                  1]
-  [pow-base-1     (pow 1 a)                  1])
+; (define-ruleset* pow-reduce-fp-safe-nan (exponents simplify fp-safe-nan)
+;   #:type ([a real])
+;   [unpow0         (pow a 0)                  1]
+;   [pow-base-1     (pow 1 a)                  1])
 
-(define-ruleset* pow-expand-fp-safe (exponents fp-safe)
-  #:type ([a real])
-  [pow1           a                           (pow a 1)])
+; (define-ruleset* pow-expand-fp-safe (exponents fp-safe)
+;   #:type ([a real])
+;   [pow1           a                           (pow a 1)])
 
-(define-ruleset* pow-canonicalize (exponents simplify)
-  #:type ([a real] [b real])
-  [exp-to-pow      (exp (* (log a) b))        (pow a b)]
-  [pow-plus        (* (pow a b) a)            (pow a (+ b 1))]
-  [unpow1/2        (pow a 1/2)                (sqrt a)]
-  [unpow2          (pow a 2)                  (* a a)]
-  [unpow3          (pow a 3)                  (* (* a a) a)]
-  [unpow1/3        (pow a 1/3)                (cbrt a)])
+; (define-ruleset* pow-canonicalize (exponents simplify)
+;   #:type ([a real] [b real])
+;   [exp-to-pow      (exp (* (log a) b))        (pow a b)]
+;   [pow-plus        (* (pow a b) a)            (pow a (+ b 1))]
+;   [unpow1/2        (pow a 1/2)                (sqrt a)]
+;   [unpow2          (pow a 2)                  (* a a)]
+;   [unpow3          (pow a 3)                  (* (* a a) a)]
+;   [unpow1/3        (pow a 1/3)                (cbrt a)])
 
-(define-ruleset* pow-transform (exponents)
-  #:type ([a real] [b real] [c real])
-  [pow-exp          (pow (exp a) b)             (exp (* a b))]
-  [pow-to-exp       (pow a b)                   (exp (* (log a) b))]
-  [pow-prod-up      (* (pow a b) (pow a c))     (pow a (+ b c))]
-  [pow-prod-down    (* (pow b a) (pow c a))     (pow (* b c) a)]
-  [pow-pow          (pow (pow a b) c)           (pow a (* b c))]
-  [pow-neg          (pow a (neg b))               (/ 1 (pow a b))]
-  [pow-flip         (/ 1 (pow a b))             (pow a (neg b))]
-  [pow-div          (/ (pow a b) (pow a c))     (pow a (- b c))]
-  [pow-sub          (pow a (- b c))             (/ (pow a b) (pow a c))]
-  [pow-unpow        (pow a (* b c))             (pow (pow a b) c)]
-  [unpow-prod-up    (pow a (+ b c))             (* (pow a b) (pow a c))]
-  [unpow-prod-down  (pow (* b c) a)             (* (pow b a) (pow c a))]
-  [pow1/2           (sqrt a)                    (pow a 1/2)]
-  [pow2             (* a a)                     (pow a 2)]
-  [pow1/3           (cbrt a)                    (pow a 1/3)]
-  [pow3             (* (* a a) a)               (pow a 3)])
+; (define-ruleset* pow-transform (exponents)
+;   #:type ([a real] [b real] [c real])
+;   [pow-exp          (pow (exp a) b)             (exp (* a b))]
+;   [pow-to-exp       (pow a b)                   (exp (* (log a) b))]
+;   [pow-prod-up      (* (pow a b) (pow a c))     (pow a (+ b c))]
+;   [pow-prod-down    (* (pow b a) (pow c a))     (pow (* b c) a)]
+;   [pow-pow          (pow (pow a b) c)           (pow a (* b c))]
+;   [pow-neg          (pow a (neg b))               (/ 1 (pow a b))]
+;   [pow-flip         (/ 1 (pow a b))             (pow a (neg b))]
+;   [pow-div          (/ (pow a b) (pow a c))     (pow a (- b c))]
+;   [pow-sub          (pow a (- b c))             (/ (pow a b) (pow a c))]
+;   [pow-unpow        (pow a (* b c))             (pow (pow a b) c)]
+;   [unpow-prod-up    (pow a (+ b c))             (* (pow a b) (pow a c))]
+;   [unpow-prod-down  (pow (* b c) a)             (* (pow b a) (pow c a))]
+;   [pow1/2           (sqrt a)                    (pow a 1/2)]
+;   [pow2             (* a a)                     (pow a 2)]
+;   [pow1/3           (cbrt a)                    (pow a 1/3)]
+;   [pow3             (* (* a a) a)               (pow a 3)])
 
-(define-ruleset* pow-transform-fp-safe-nan (exponents simplify fp-safe-nan)
-  #:type ([a real])
-  [pow-base-0       (pow 0 a)                   0])
+; (define-ruleset* pow-transform-fp-safe-nan (exponents simplify fp-safe-nan)
+;   #:type ([a real])
+;   [pow-base-0       (pow 0 a)                   0])
 
-(define-ruleset* pow-transform-fp-safe (exponents fp-safe)
-  #:type ([a real])
-  [inv-pow          (/ 1 a)                     (pow a -1)])
+; (define-ruleset* pow-transform-fp-safe (exponents fp-safe)
+;   #:type ([a real])
+;   [inv-pow          (/ 1 a)                     (pow a -1)])
 
-; Logarithms
-(define-ruleset* log-distribute (exponents simplify)
-  #:type ([a real] [b real])
-  [log-prod     (log (* a b))       (+ (log a) (log b))]
-  [log-div      (log (/ a b))       (- (log a) (log b))]
-  [log-rec      (log (/ 1 a))       (neg (log a))]
-  [log-pow      (log (pow a b))     (* b (log a))]
-  [log-E        (log (E))           1])
+; ; Logarithms
+; (define-ruleset* log-distribute (exponents simplify)
+;   #:type ([a real] [b real])
+;   [log-prod     (log (* a b))       (+ (log a) (log b))]
+;   [log-div      (log (/ a b))       (- (log a) (log b))]
+;   [log-rec      (log (/ 1 a))       (neg (log a))]
+;   [log-pow      (log (pow a b))     (* b (log a))]
+;   [log-E        (log (E))           1])
 
-(define-ruleset* log-factor (exponents)
-  #:type ([a real] [b real])
-  [sum-log      (+ (log a) (log b))  (log (* a b))]
-  [diff-log     (- (log a) (log b))  (log (/ a b))]
-  [neg-log      (neg (log a))          (log (/ 1 a))])
+; (define-ruleset* log-factor (exponents)
+;   #:type ([a real] [b real])
+;   [sum-log      (+ (log a) (log b))  (log (* a b))]
+;   [diff-log     (- (log a) (log b))  (log (/ a b))]
+;   [neg-log      (neg (log a))          (log (/ 1 a))])
 
-; Trigonometry
-(define-ruleset* trig-reduce (trigonometry simplify)
-  #:type ([a real] [b real] [x real])
-  [cos-sin-sum (+ (* (cos a) (cos a)) (* (sin a) (sin a))) 1]
-  [1-sub-cos   (- 1 (* (cos a) (cos a)))   (* (sin a) (sin a))]
-  [1-sub-sin   (- 1 (* (sin a) (sin a)))   (* (cos a) (cos a))]
-  [-1-add-cos  (+ (* (cos a) (cos a)) -1)  (neg (* (sin a) (sin a)))]
-  [-1-add-sin  (+ (* (sin a) (sin a)) -1)  (neg (* (cos a) (cos a)))]
-  [sub-1-cos   (- (* (cos a) (cos a)) 1)   (neg (* (sin a) (sin a)))]
-  [sub-1-sin   (- (* (sin a) (sin a)) 1)   (neg (* (cos a) (cos a)))]
-  [sin-PI/6    (sin (/ (PI) 6))        1/2]
-  [sin-PI/4    (sin (/ (PI) 4))        (/ (sqrt 2) 2)]
-  [sin-PI/3    (sin (/ (PI) 3))        (/ (sqrt 3) 2)]
-  [sin-PI/2    (sin (/ (PI) 2))        1]
-  [sin-PI      (sin (PI))              0]
-  [sin-+PI     (sin (+ x (PI)))        (neg (sin x))]
-  [sin-+PI/2   (sin (+ x (/ (PI) 2)))  (cos x)]
-  [cos-PI/6    (cos (/ (PI) 6))        (/ (sqrt 3) 2)]
-  [cos-PI/4    (cos (/ (PI) 4))        (/ (sqrt 2) 2)]
-  [cos-PI/3    (cos (/ (PI) 3))        1/2]
-  [cos-PI/2    (cos (/ (PI) 2))        0]
-  [cos-PI      (cos (PI))              -1]
-  [cos-+PI     (cos (+ x (PI)))        (neg (cos x))]
-  [cos-+PI/2   (cos (+ x (/ (PI) 2)))  (neg (sin x))]
-  [tan-PI/6    (tan (/ (PI) 6))        (/ 1 (sqrt 3))]
-  [tan-PI/4    (tan (/ (PI) 4))        1]
-  [tan-PI/3    (tan (/ (PI) 3))        (sqrt 3)]
-  [tan-PI      (tan (PI))              0]
-  [tan-+PI     (tan (+ x (PI)))        (tan x)]
-  [tan-+PI/2   (tan (+ x (/ (PI) 2)))  (/ -1 (tan x))]
-  [hang-0p-tan (/ (sin a) (+ 1 (cos a)))     (tan (/ a 2))]
-  [hang-0m-tan (/ (neg (sin a)) (+ 1 (cos a))) (tan (/ (neg a) 2))]
-  [hang-p0-tan (/ (- 1 (cos a)) (sin a))     (tan (/ a 2))]
-  [hang-m0-tan (/ (- 1 (cos a)) (neg (sin a))) (tan (/ (neg a) 2))]
-  [hang-p-tan  (/ (+ (sin a) (sin b)) (+ (cos a) (cos b)))
-               (tan (/ (+ a b) 2))]
-  [hang-m-tan  (/ (- (sin a) (sin b)) (+ (cos a) (cos b)))
-               (tan (/ (- a b) 2))])
+; ; Trigonometry
+; (define-ruleset* trig-reduce (trigonometry simplify)
+;   #:type ([a real] [b real] [x real])
+;   [cos-sin-sum (+ (* (cos a) (cos a)) (* (sin a) (sin a))) 1]
+;   [1-sub-cos   (- 1 (* (cos a) (cos a)))   (* (sin a) (sin a))]
+;   [1-sub-sin   (- 1 (* (sin a) (sin a)))   (* (cos a) (cos a))]
+;   [-1-add-cos  (+ (* (cos a) (cos a)) -1)  (neg (* (sin a) (sin a)))]
+;   [-1-add-sin  (+ (* (sin a) (sin a)) -1)  (neg (* (cos a) (cos a)))]
+;   [sub-1-cos   (- (* (cos a) (cos a)) 1)   (neg (* (sin a) (sin a)))]
+;   [sub-1-sin   (- (* (sin a) (sin a)) 1)   (neg (* (cos a) (cos a)))]
+;   [sin-PI/6    (sin (/ (PI) 6))        1/2]
+;   [sin-PI/4    (sin (/ (PI) 4))        (/ (sqrt 2) 2)]
+;   [sin-PI/3    (sin (/ (PI) 3))        (/ (sqrt 3) 2)]
+;   [sin-PI/2    (sin (/ (PI) 2))        1]
+;   [sin-PI      (sin (PI))              0]
+;   [sin-+PI     (sin (+ x (PI)))        (neg (sin x))]
+;   [sin-+PI/2   (sin (+ x (/ (PI) 2)))  (cos x)]
+;   [cos-PI/6    (cos (/ (PI) 6))        (/ (sqrt 3) 2)]
+;   [cos-PI/4    (cos (/ (PI) 4))        (/ (sqrt 2) 2)]
+;   [cos-PI/3    (cos (/ (PI) 3))        1/2]
+;   [cos-PI/2    (cos (/ (PI) 2))        0]
+;   [cos-PI      (cos (PI))              -1]
+;   [cos-+PI     (cos (+ x (PI)))        (neg (cos x))]
+;   [cos-+PI/2   (cos (+ x (/ (PI) 2)))  (neg (sin x))]
+;   [tan-PI/6    (tan (/ (PI) 6))        (/ 1 (sqrt 3))]
+;   [tan-PI/4    (tan (/ (PI) 4))        1]
+;   [tan-PI/3    (tan (/ (PI) 3))        (sqrt 3)]
+;   [tan-PI      (tan (PI))              0]
+;   [tan-+PI     (tan (+ x (PI)))        (tan x)]
+;   [tan-+PI/2   (tan (+ x (/ (PI) 2)))  (/ -1 (tan x))]
+;   [hang-0p-tan (/ (sin a) (+ 1 (cos a)))     (tan (/ a 2))]
+;   [hang-0m-tan (/ (neg (sin a)) (+ 1 (cos a))) (tan (/ (neg a) 2))]
+;   [hang-p0-tan (/ (- 1 (cos a)) (sin a))     (tan (/ a 2))]
+;   [hang-m0-tan (/ (- 1 (cos a)) (neg (sin a))) (tan (/ (neg a) 2))]
+;   [hang-p-tan  (/ (+ (sin a) (sin b)) (+ (cos a) (cos b)))
+;                (tan (/ (+ a b) 2))]
+;   [hang-m-tan  (/ (- (sin a) (sin b)) (+ (cos a) (cos b)))
+;                (tan (/ (- a b) 2))])
 
-(define-ruleset* trig-reduce-fp-sound (trigonometry simplify fp-safe)
-  [sin-0       (sin 0)               0]
-  [cos-0       (cos 0)               1]
-  [tan-0       (tan 0)               0])
+; (define-ruleset* trig-reduce-fp-sound (trigonometry simplify fp-safe)
+;   [sin-0       (sin 0)               0]
+;   [cos-0       (cos 0)               1]
+;   [tan-0       (tan 0)               0])
 
-(define-ruleset* trig-reduce-fp-sound-nan (trigonometry simplify fp-safe-nan)
-  #:type ([x real])
-  [sin-neg     (sin (neg x))           (neg (sin x))]
-  [cos-neg     (cos (neg x))           (cos x)]
-  [tan-neg     (tan (neg x))           (neg (tan x))])
+; (define-ruleset* trig-reduce-fp-sound-nan (trigonometry simplify fp-safe-nan)
+;   #:type ([x real])
+;   [sin-neg     (sin (neg x))           (neg (sin x))]
+;   [cos-neg     (cos (neg x))           (cos x)]
+;   [tan-neg     (tan (neg x))           (neg (tan x))])
 
-(define-ruleset* trig-expand (trigonometry)
-  #:type ([x real] [y real] [a real] [b real])
-  [sin-sum     (sin (+ x y))             (+ (* (sin x) (cos y)) (* (cos x) (sin y)))]
-  [cos-sum     (cos (+ x y))             (- (* (cos x) (cos y)) (* (sin x) (sin y)))]
-  [tan-sum     (tan (+ x y))             (/ (+ (tan x) (tan y)) (- 1 (* (tan x) (tan y))))]
-  [sin-diff    (sin (- x y))             (- (* (sin x) (cos y)) (* (cos x) (sin y)))]
-  [cos-diff    (cos (- x y))             (+ (* (cos x) (cos y)) (* (sin x) (sin y)))]
-  [sin-2       (sin (* 2 x))
-               (* 2 (* (sin x) (cos x)))]
-  [sin-3       (sin (* 3 x))
-               (- (* 3 (sin x)) (* 4 (pow (sin x) 3)))]
-  [2-sin       (* 2 (* (sin x) (cos x)))
-               (sin (* 2 x))]
-  [3-sin       (- (* 3 (sin x)) (* 4 (pow (sin x) 3)))
-               (sin (* 3 x))]
-  [cos-2       (cos (* 2 x))
-               (- (* (cos x) (cos x)) (* (sin x) (sin x)))]
-  [cos-3       (cos (* 3 x))
-               (- (* 4 (pow (cos x) 3)) (* 3 (cos x)))]
-  [2-cos       (- (* (cos x) (cos x)) (* (sin x) (sin x)))
-               (cos (* 2 x))]
-  [3-cos       (- (* 4 (pow (cos x) 3)) (* 3 (cos x)))
-               (cos (* 3 x))]
-  [tan-2       (tan (* 2 x))             (/ (* 2 (tan x)) (- 1 (* (tan x) (tan x))))]
-  [2-tan       (/ (* 2 (tan x)) (- 1 (* (tan x) (tan x)))) (tan (* 2 x))]
-  [sqr-sin-a   (* (sin x) (sin x))       (- 1/2 (* 1/2 (cos (* 2 x))))]
-  [sqr-cos-a   (* (cos x) (cos x))       (+ 1/2 (* 1/2 (cos (* 2 x))))]
-  [diff-sin    (- (sin x) (sin y))       (* 2 (* (sin (/ (- x y) 2)) (cos (/ (+ x y) 2))))]
-  [diff-cos    (- (cos x) (cos y))       (* -2 (* (sin (/ (- x y) 2)) (sin (/ (+ x y) 2))))]
-  [sum-sin     (+ (sin x) (sin y))       (* 2 (* (sin (/ (+ x y) 2)) (cos (/ (- x y) 2))))]
-  [sum-cos     (+ (cos x) (cos y))       (* 2 (* (cos (/ (+ x y) 2)) (cos (/ (- x y) 2))))]
-  [cos-mult    (* (cos x) (cos y))       (/ (+ (cos (+ x y)) (cos (- x y))) 2)]
-  [sin-mult    (* (sin x) (sin y))       (/ (- (cos (- x y)) (cos (+ x y))) 2)]
-  [sin-cos-mult (* (sin x) (cos y))      (/ (+ (sin (- x y)) (sin (+ x y))) 2)]
-  [diff-atan   (- (atan x) (atan y))     (atan2 (- x y) (+ 1 (* x y)))]
-  [sum-atan    (+ (atan x) (atan y))     (atan2 (+ x y) (- 1 (* x y)))]
-  [tan-quot    (tan x)                   (/ (sin x) (cos x))]
-  [quot-tan    (/ (sin x) (cos x))       (tan x)]
-  [tan-hang-p  (tan (/ (+ a b) 2))
-               (/ (+ (sin a) (sin b)) (+ (cos a) (cos b)))]
-  [tan-hang-m  (tan (/ (- a b) 2))
-               (/ (- (sin a) (sin b)) (+ (cos a) (cos b)))])
+; (define-ruleset* trig-expand (trigonometry)
+;   #:type ([x real] [y real] [a real] [b real])
+;   [sin-sum     (sin (+ x y))             (+ (* (sin x) (cos y)) (* (cos x) (sin y)))]
+;   [cos-sum     (cos (+ x y))             (- (* (cos x) (cos y)) (* (sin x) (sin y)))]
+;   [tan-sum     (tan (+ x y))             (/ (+ (tan x) (tan y)) (- 1 (* (tan x) (tan y))))]
+;   [sin-diff    (sin (- x y))             (- (* (sin x) (cos y)) (* (cos x) (sin y)))]
+;   [cos-diff    (cos (- x y))             (+ (* (cos x) (cos y)) (* (sin x) (sin y)))]
+;   [sin-2       (sin (* 2 x))
+;                (* 2 (* (sin x) (cos x)))]
+;   [sin-3       (sin (* 3 x))
+;                (- (* 3 (sin x)) (* 4 (pow (sin x) 3)))]
+;   [2-sin       (* 2 (* (sin x) (cos x)))
+;                (sin (* 2 x))]
+;   [3-sin       (- (* 3 (sin x)) (* 4 (pow (sin x) 3)))
+;                (sin (* 3 x))]
+;   [cos-2       (cos (* 2 x))
+;                (- (* (cos x) (cos x)) (* (sin x) (sin x)))]
+;   [cos-3       (cos (* 3 x))
+;                (- (* 4 (pow (cos x) 3)) (* 3 (cos x)))]
+;   [2-cos       (- (* (cos x) (cos x)) (* (sin x) (sin x)))
+;                (cos (* 2 x))]
+;   [3-cos       (- (* 4 (pow (cos x) 3)) (* 3 (cos x)))
+;                (cos (* 3 x))]
+;   [tan-2       (tan (* 2 x))             (/ (* 2 (tan x)) (- 1 (* (tan x) (tan x))))]
+;   [2-tan       (/ (* 2 (tan x)) (- 1 (* (tan x) (tan x)))) (tan (* 2 x))]
+;   [sqr-sin-a   (* (sin x) (sin x))       (- 1/2 (* 1/2 (cos (* 2 x))))]
+;   [sqr-cos-a   (* (cos x) (cos x))       (+ 1/2 (* 1/2 (cos (* 2 x))))]
+;   [diff-sin    (- (sin x) (sin y))       (* 2 (* (sin (/ (- x y) 2)) (cos (/ (+ x y) 2))))]
+;   [diff-cos    (- (cos x) (cos y))       (* -2 (* (sin (/ (- x y) 2)) (sin (/ (+ x y) 2))))]
+;   [sum-sin     (+ (sin x) (sin y))       (* 2 (* (sin (/ (+ x y) 2)) (cos (/ (- x y) 2))))]
+;   [sum-cos     (+ (cos x) (cos y))       (* 2 (* (cos (/ (+ x y) 2)) (cos (/ (- x y) 2))))]
+;   [cos-mult    (* (cos x) (cos y))       (/ (+ (cos (+ x y)) (cos (- x y))) 2)]
+;   [sin-mult    (* (sin x) (sin y))       (/ (- (cos (- x y)) (cos (+ x y))) 2)]
+;   [sin-cos-mult (* (sin x) (cos y))      (/ (+ (sin (- x y)) (sin (+ x y))) 2)]
+;   [diff-atan   (- (atan x) (atan y))     (atan2 (- x y) (+ 1 (* x y)))]
+;   [sum-atan    (+ (atan x) (atan y))     (atan2 (+ x y) (- 1 (* x y)))]
+;   [tan-quot    (tan x)                   (/ (sin x) (cos x))]
+;   [quot-tan    (/ (sin x) (cos x))       (tan x)]
+;   [tan-hang-p  (tan (/ (+ a b) 2))
+;                (/ (+ (sin a) (sin b)) (+ (cos a) (cos b)))]
+;   [tan-hang-m  (tan (/ (- a b) 2))
+;                (/ (- (sin a) (sin b)) (+ (cos a) (cos b)))])
 
-(define-ruleset* trig-expand-fp-safe (trignometry fp-safe)
-  #:type ([x real])
-  [sqr-sin-b   (* (sin x) (sin x))       (- 1 (* (cos x) (cos x)))]
-  [sqr-cos-b   (* (cos x) (cos x))       (- 1 (* (sin x) (sin x)))])
+; (define-ruleset* trig-expand-fp-safe (trignometry fp-safe)
+;   #:type ([x real])
+;   [sqr-sin-b   (* (sin x) (sin x))       (- 1 (* (cos x) (cos x)))]
+;   [sqr-cos-b   (* (cos x) (cos x))       (- 1 (* (sin x) (sin x)))])
 
-(define-ruleset* trig-inverses (trigonometry)
-  #:type ([x real])
-  [sin-asin    (sin (asin x))         x]
-  [cos-acos    (cos (acos x))         x]
-  [tan-atan    (tan (atan x))         x]
-  [atan-tan    (atan (tan x))         (remainder x (PI))]
-  [asin-sin    (asin (sin x))         (- (fabs (remainder (+ x (/ (PI) 2)) (* 2 (PI)))) (/ (PI) 2))]
-  [acos-cos    (acos (cos x))         (fabs (remainder x (* 2 (PI))))])
+; (define-ruleset* trig-inverses (trigonometry)
+;   #:type ([x real])
+;   [sin-asin    (sin (asin x))         x]
+;   [cos-acos    (cos (acos x))         x]
+;   [tan-atan    (tan (atan x))         x]
+;   [atan-tan    (atan (tan x))         (remainder x (PI))]
+;   [asin-sin    (asin (sin x))         (- (fabs (remainder (+ x (/ (PI) 2)) (* 2 (PI)))) (/ (PI) 2))]
+;   [acos-cos    (acos (cos x))         (fabs (remainder x (* 2 (PI))))])
 
-(define-ruleset* trig-inverses-simplified (trigonometry)
-  #:type ([x real])
-  [atan-tan-s  (atan (tan x))         x]
-  [asin-sin-s  (asin (sin x))         x]
-  [acos-cos-s  (acos (cos x))         x])
+; (define-ruleset* trig-inverses-simplified (trigonometry)
+;   #:type ([x real])
+;   [atan-tan-s  (atan (tan x))         x]
+;   [asin-sin-s  (asin (sin x))         x]
+;   [acos-cos-s  (acos (cos x))         x])
 
-(define-ruleset* atrig-expand (trigonometry)
-  #:type ([x real])
-  [cos-asin    (cos (asin x))         (sqrt (- 1 (* x x)))]
-  [tan-asin    (tan (asin x))         (/ x (sqrt (- 1 (* x x))))]
-  [sin-acos    (sin (acos x))         (sqrt (- 1 (* x x)))]
-  [tan-acos    (tan (acos x))         (/ (sqrt (- 1 (* x x))) x)]
-  [sin-atan    (sin (atan x))         (/ x (sqrt (+ 1 (* x x))))]
-  [cos-atan    (cos (atan x))         (/ 1 (sqrt (+ 1 (* x x))))]
-  [asin-acos   (asin x)               (- (/ (PI) 2) (acos x))]
-  [acos-asin   (acos x)               (- (/ (PI) 2) (asin x))]
-  [asin-neg    (asin (neg x))         (neg (asin x))]
-  [acos-neg    (acos (neg x))         (- (PI) (acos x))]
-  [atan-neg    (atan (neg x))         (neg (atan x))])
+; (define-ruleset* atrig-expand (trigonometry)
+;   #:type ([x real])
+;   [cos-asin    (cos (asin x))         (sqrt (- 1 (* x x)))]
+;   [tan-asin    (tan (asin x))         (/ x (sqrt (- 1 (* x x))))]
+;   [sin-acos    (sin (acos x))         (sqrt (- 1 (* x x)))]
+;   [tan-acos    (tan (acos x))         (/ (sqrt (- 1 (* x x))) x)]
+;   [sin-atan    (sin (atan x))         (/ x (sqrt (+ 1 (* x x))))]
+;   [cos-atan    (cos (atan x))         (/ 1 (sqrt (+ 1 (* x x))))]
+;   [asin-acos   (asin x)               (- (/ (PI) 2) (acos x))]
+;   [acos-asin   (acos x)               (- (/ (PI) 2) (asin x))]
+;   [asin-neg    (asin (neg x))         (neg (asin x))]
+;   [acos-neg    (acos (neg x))         (- (PI) (acos x))]
+;   [atan-neg    (atan (neg x))         (neg (atan x))])
 
-; Hyperbolic trigonometric functions
-(define-ruleset* htrig-reduce (hyperbolic simplify)
-  #:type ([x real])
-  [sinh-def    (sinh x)               (/ (- (exp x) (exp (neg x))) 2)]
-  [cosh-def    (cosh x)               (/ (+ (exp x) (exp (neg x))) 2)]
-  [tanh-def-a  (tanh x)               (/ (- (exp x) (exp (neg x))) (+ (exp x) (exp (neg x))))]
-  [tanh-def-b  (tanh x)               (/ (- (exp (* 2 x)) 1) (+ (exp (* 2 x)) 1))]
-  [tanh-def-c  (tanh x)               (/ (- 1 (exp (* -2 x))) (+ 1 (exp (* -2 x))))]
-  [sinh-cosh   (- (* (cosh x) (cosh x)) (* (sinh x) (sinh x))) 1]
-  [sinh-+-cosh (+ (cosh x) (sinh x))  (exp x)]
-  [sinh---cosh (- (cosh x) (sinh x))  (exp (neg x))])
+; ; Hyperbolic trigonometric functions
+; (define-ruleset* htrig-reduce (hyperbolic simplify)
+;   #:type ([x real])
+;   [sinh-def    (sinh x)               (/ (- (exp x) (exp (neg x))) 2)]
+;   [cosh-def    (cosh x)               (/ (+ (exp x) (exp (neg x))) 2)]
+;   [tanh-def-a  (tanh x)               (/ (- (exp x) (exp (neg x))) (+ (exp x) (exp (neg x))))]
+;   [tanh-def-b  (tanh x)               (/ (- (exp (* 2 x)) 1) (+ (exp (* 2 x)) 1))]
+;   [tanh-def-c  (tanh x)               (/ (- 1 (exp (* -2 x))) (+ 1 (exp (* -2 x))))]
+;   [sinh-cosh   (- (* (cosh x) (cosh x)) (* (sinh x) (sinh x))) 1]
+;   [sinh-+-cosh (+ (cosh x) (sinh x))  (exp x)]
+;   [sinh---cosh (- (cosh x) (sinh x))  (exp (neg x))])
 
-(define-ruleset* htrig-expand (hyperbolic)
-  #:type ([x real] [y real])
-  [sinh-undef  (- (exp x) (exp (neg x)))                       (* 2 (sinh x))]
-  [cosh-undef  (+ (exp x) (exp (neg x)))                       (* 2 (cosh x))]
-  [tanh-undef  (/ (- (exp x) (exp (neg x))) (+ (exp x) (exp (neg x)))) (tanh x)]
-  [cosh-sum    (cosh (+ x y))         (+ (* (cosh x) (cosh y)) (* (sinh x) (sinh y)))]
-  [cosh-diff   (cosh (- x y))         (- (* (cosh x) (cosh y)) (* (sinh x) (sinh y)))]
-  [cosh-2      (cosh (* 2 x))         (+ (* (sinh x) (sinh x)) (* (cosh x) (cosh x)))]
-  [cosh-1/2    (cosh (/ x 2))         (sqrt (/ (+ (cosh x) 1) 2))]
-  [sinh-sum    (sinh (+ x y))         (+ (* (sinh x) (cosh y)) (* (cosh x) (sinh y)))]
-  [sinh-diff   (sinh (- x y))         (- (* (sinh x) (cosh y)) (* (cosh x) (sinh y)))]
-  [sinh-2      (sinh (* 2 x))         (* 2 (* (sinh x) (cosh x)))]
-  [sinh-1/2    (sinh (/ x 2))         (/ (sinh x) (sqrt (* 2 (+ (cosh x) 1))))]
-  [tanh-sum    (tanh (+ x y))         (/ (+ (tanh x) (tanh y)) (+ 1 (* (tanh x) (tanh y))))]
-  [tanh-2      (tanh (* 2 x))         (/ (* 2 (tanh x)) (+ 1 (* (tanh x) (tanh x))))]
-  [tanh-1/2    (tanh (/ x 2))         (/ (sinh x) (+ (cosh x) 1))]
-  [tanh-1/2*   (tanh (/ x 2))         (/ (- (cosh x) 1) (sinh x))]
-  [sum-sinh    (+ (sinh x) (sinh y))  (* 2 (* (sinh (/ (+ x y) 2)) (cosh (/ (- x y) 2))))]
-  [sum-cosh    (+ (cosh x) (cosh y))  (* 2 (* (cosh (/ (+ x y) 2)) (cosh (/ (- x y) 2))))]
-  [diff-sinh   (- (sinh x) (sinh y))  (* 2 (* (cosh (/ (+ x y) 2)) (sinh (/ (- x y) 2))))]
-  [diff-cosh   (- (cosh x) (cosh y))  (* 2 (* (sinh (/ (+ x y) 2)) (sinh (/ (- x y) 2))))])
+; (define-ruleset* htrig-expand (hyperbolic)
+;   #:type ([x real] [y real])
+;   [sinh-undef  (- (exp x) (exp (neg x)))                       (* 2 (sinh x))]
+;   [cosh-undef  (+ (exp x) (exp (neg x)))                       (* 2 (cosh x))]
+;   [tanh-undef  (/ (- (exp x) (exp (neg x))) (+ (exp x) (exp (neg x)))) (tanh x)]
+;   [cosh-sum    (cosh (+ x y))         (+ (* (cosh x) (cosh y)) (* (sinh x) (sinh y)))]
+;   [cosh-diff   (cosh (- x y))         (- (* (cosh x) (cosh y)) (* (sinh x) (sinh y)))]
+;   [cosh-2      (cosh (* 2 x))         (+ (* (sinh x) (sinh x)) (* (cosh x) (cosh x)))]
+;   [cosh-1/2    (cosh (/ x 2))         (sqrt (/ (+ (cosh x) 1) 2))]
+;   [sinh-sum    (sinh (+ x y))         (+ (* (sinh x) (cosh y)) (* (cosh x) (sinh y)))]
+;   [sinh-diff   (sinh (- x y))         (- (* (sinh x) (cosh y)) (* (cosh x) (sinh y)))]
+;   [sinh-2      (sinh (* 2 x))         (* 2 (* (sinh x) (cosh x)))]
+;   [sinh-1/2    (sinh (/ x 2))         (/ (sinh x) (sqrt (* 2 (+ (cosh x) 1))))]
+;   [tanh-sum    (tanh (+ x y))         (/ (+ (tanh x) (tanh y)) (+ 1 (* (tanh x) (tanh y))))]
+;   [tanh-2      (tanh (* 2 x))         (/ (* 2 (tanh x)) (+ 1 (* (tanh x) (tanh x))))]
+;   [tanh-1/2    (tanh (/ x 2))         (/ (sinh x) (+ (cosh x) 1))]
+;   [tanh-1/2*   (tanh (/ x 2))         (/ (- (cosh x) 1) (sinh x))]
+;   [sum-sinh    (+ (sinh x) (sinh y))  (* 2 (* (sinh (/ (+ x y) 2)) (cosh (/ (- x y) 2))))]
+;   [sum-cosh    (+ (cosh x) (cosh y))  (* 2 (* (cosh (/ (+ x y) 2)) (cosh (/ (- x y) 2))))]
+;   [diff-sinh   (- (sinh x) (sinh y))  (* 2 (* (cosh (/ (+ x y) 2)) (sinh (/ (- x y) 2))))]
+;   [diff-cosh   (- (cosh x) (cosh y))  (* 2 (* (sinh (/ (+ x y) 2)) (sinh (/ (- x y) 2))))])
 
-(define-ruleset* htrig-expand-fp-safe (hyperbolic fp-safe)
-  #:type ([x real])
-  [sinh-neg    (sinh (neg x))           (neg (sinh x))]
-  [sinh-0      (sinh 0)               0]
-  [cosh-neg    (cosh (neg x))           (cosh x)]
-  [cosh-0      (cosh 0)               1])
+; (define-ruleset* htrig-expand-fp-safe (hyperbolic fp-safe)
+;   #:type ([x real])
+;   [sinh-neg    (sinh (neg x))           (neg (sinh x))]
+;   [sinh-0      (sinh 0)               0]
+;   [cosh-neg    (cosh (neg x))           (cosh x)]
+;   [cosh-0      (cosh 0)               1])
 
-(define-ruleset* ahtrig-expand (hyperbolic)
-  #:type ([x real])
-  [asinh-def   (asinh x)              (log (+ x (sqrt (+ (* x x) 1))))]
-  [acosh-def   (acosh x)              (log (+ x (sqrt (- (* x x) 1))))]
-  [atanh-def   (atanh x)              (/ (log (/ (+ 1 x) (- 1 x))) 2)]
-  [acosh-2     (acosh (- (* 2 (* x x)) 1)) (* 2 (acosh x))]
-  [asinh-2     (acosh (+ (* 2 (* x x)) 1)) (* 2 (asinh x))]
-  [sinh-asinh  (sinh (asinh x))       x]
-  [sinh-acosh  (sinh (acosh x))       (sqrt (- (* x x) 1))]
-  [sinh-atanh  (sinh (atanh x))       (/ x (sqrt (- 1 (* x x))))]
-  [cosh-asinh  (cosh (asinh x))       (sqrt (+ (* x x) 1))]
-  [cosh-acosh  (cosh (acosh x))       x]
-  [cosh-atanh  (cosh (atanh x))       (/ 1 (sqrt (- 1 (* x x))))]
-  [tanh-asinh  (tanh (asinh x))       (/ x (sqrt (+ 1 (* x x))))]
-  [tanh-acosh  (tanh (acosh x))       (/ (sqrt (- (* x x) 1)) x)]
-  [tanh-atanh  (tanh (atanh x))       x])
+; (define-ruleset* ahtrig-expand (hyperbolic)
+;   #:type ([x real])
+;   [asinh-def   (asinh x)              (log (+ x (sqrt (+ (* x x) 1))))]
+;   [acosh-def   (acosh x)              (log (+ x (sqrt (- (* x x) 1))))]
+;   [atanh-def   (atanh x)              (/ (log (/ (+ 1 x) (- 1 x))) 2)]
+;   [acosh-2     (acosh (- (* 2 (* x x)) 1)) (* 2 (acosh x))]
+;   [asinh-2     (acosh (+ (* 2 (* x x)) 1)) (* 2 (asinh x))]
+;   [sinh-asinh  (sinh (asinh x))       x]
+;   [sinh-acosh  (sinh (acosh x))       (sqrt (- (* x x) 1))]
+;   [sinh-atanh  (sinh (atanh x))       (/ x (sqrt (- 1 (* x x))))]
+;   [cosh-asinh  (cosh (asinh x))       (sqrt (+ (* x x) 1))]
+;   [cosh-acosh  (cosh (acosh x))       x]
+;   [cosh-atanh  (cosh (atanh x))       (/ 1 (sqrt (- 1 (* x x))))]
+;   [tanh-asinh  (tanh (asinh x))       (/ x (sqrt (+ 1 (* x x))))]
+;   [tanh-acosh  (tanh (acosh x))       (/ (sqrt (- (* x x) 1)) x)]
+;   [tanh-atanh  (tanh (atanh x))       x])
 
-; Specialized numerical functions
-(define-ruleset* special-numerical-reduce (numerics simplify)
-  #:type ([x real] [y real] [z real])
-  [expm1-def   (- (exp x) 1)              (expm1 x)]
-  [log1p-def   (log (+ 1 x))              (log1p x)]
-  [log1p-expm1 (log1p (expm1 x))          x]
-  [expm1-log1p (expm1 (log1p x))          x]
-  [hypot-def   (sqrt (+ (* x x) (* y y))) (hypot x y)]
-  [hypot-1-def (sqrt (+ 1 (* y y)))       (hypot 1 y)]
-  [fma-def     (+ (* x y) z)              (fma x y z)]
-  [fma-neg     (- (* x y) z)              (fma x y (neg z))]
-  [fma-udef    (fma x y z)                (+ (* x y) z)])
+; ; Specialized numerical functions
+; (define-ruleset* special-numerical-reduce (numerics simplify)
+;   #:type ([x real] [y real] [z real])
+;   [expm1-def   (- (exp x) 1)              (expm1 x)]
+;   [log1p-def   (log (+ 1 x))              (log1p x)]
+;   [log1p-expm1 (log1p (expm1 x))          x]
+;   [expm1-log1p (expm1 (log1p x))          x]
+;   [hypot-def   (sqrt (+ (* x x) (* y y))) (hypot x y)]
+;   [hypot-1-def (sqrt (+ 1 (* y y)))       (hypot 1 y)]
+;   [fma-def     (+ (* x y) z)              (fma x y z)]
+;   [fma-neg     (- (* x y) z)              (fma x y (neg z))]
+;   [fma-udef    (fma x y z)                (+ (* x y) z)])
 
-(define-ruleset* special-numerical-expand (numerics)
-  #:type ([x real] [y real])
-  [expm1-udef    (expm1 x)      (- (exp x) 1)]
-  [log1p-udef    (log1p x)      (log (+ 1 x))]
-  [log1p-expm1-u x              (log1p (expm1 x))]
-  [expm1-log1p-u x              (expm1 (log1p x))]
-  [hypot-udef    (hypot x y)    (sqrt (+ (* x x) (* y y)))])
+; (define-ruleset* special-numerical-expand (numerics)
+;   #:type ([x real] [y real])
+;   [expm1-udef    (expm1 x)      (- (exp x) 1)]
+;   [log1p-udef    (log1p x)      (log (+ 1 x))]
+;   [log1p-expm1-u x              (log1p (expm1 x))]
+;   [expm1-log1p-u x              (expm1 (log1p x))]
+;   [hypot-udef    (hypot x y)    (sqrt (+ (* x x) (* y y)))])
 
-(define-ruleset* numerics-papers (numerics)
-  #:type ([a real] [b real] [c real] [d real])
-  ;  "Further Analysis of Kahan's Algorithm for
-  ;   the Accurate Computation of 2x2 Determinants"
-  ;  Jeannerod et al., Mathematics of Computation, 2013
-  ;
-  ;  a * b - c * d  ===> fma(a, b, -(d * c)) + fma(-d, c, d * c)
-  [prod-diff    (- (* a b) (* c d))
-                (+ (fma a b (neg (* d c)))
-                   (fma (neg d) c (* d c)))])
+; (define-ruleset* numerics-papers (numerics)
+;   #:type ([a real] [b real] [c real] [d real])
+;   ;  "Further Analysis of Kahan's Algorithm for
+;   ;   the Accurate Computation of 2x2 Determinants"
+;   ;  Jeannerod et al., Mathematics of Computation, 2013
+;   ;
+;   ;  a * b - c * d  ===> fma(a, b, -(d * c)) + fma(-d, c, d * c)
+;   [prod-diff    (- (* a b) (* c d))
+;                 (+ (fma a b (neg (* d c)))
+;                    (fma (neg d) c (* d c)))])
 
 (define-ruleset* compare-reduce (bools simplify fp-safe-nan)
   #:type ([x real] [y real])
@@ -744,8 +744,101 @@
   [if-if-and      (if a (if b x y) y) (if (and a b) x y)]
   [if-if-and-not  (if a (if b y x) y) (if (and a (not b)) x y)])
 
-(define-ruleset* erf-rules (special simplify)
-  #:type ([x real])
-  [erf-odd          (erf (neg x))        (neg (erf x))]
-  [erf-erfc         (erfc x)             (- 1 (erf x))]
-  [erfc-erf         (erf x)              (- 1 (erfc x))])
+; (define-ruleset* erf-rules (special simplify)
+;   #:type ([x real])
+;   [erf-odd          (erf (neg x))        (neg (erf x))]
+;   [erf-erfc         (erfc x)             (- 1 (erf x))]
+;   [erfc-erf         (erf x)              (- 1 (erfc x))])
+
+;; Ruler rules
+(define-ruleset*
+ ruler-simplify
+ (ruler simplify arithmetic)
+ #:type
+ ((a real) (b real) (c real))
+ (rules-1-rev (+ b (+ a c)) (+ c (+ b a)))
+ (rules-1 (+ c (+ b a)) (+ b (+ a c)))
+ (rules-2 (/ (/ c b) a) (/ (/ c a) b))
+ (rules-3 (- (- c b) a) (- (- c a) b))
+ (rules-4 (* c (* b a)) (* a (* b c)))
+ (rules-5 (/ c (/ b a)) (/ a (/ b c)))
+ (rules-6-rev (/ (/ c a) b) (/ c (* b a)))
+ (rules-6 (/ c (* b a)) (/ (/ c a) b))
+ (rules-7-rev (- (- c b) a) (- c (+ b a)))
+ (rules-7 (- c (+ b a)) (- (- c b) a))
+ (rules-8-rev (* c (/ b a)) (/ (* c b) a))
+ (rules-8 (/ (* c b) a) (* c (/ b a)))
+ (rules-9-rev (* c (/ a b)) (/ c (/ b a)))
+ (rules-9 (/ c (/ b a)) (* c (/ a b)))
+ (rules-10 (/ (+ b (- c b)) a) (/ c a))
+ (rules-11 (/ c (+ a (- b a))) (/ c b))
+ (rules-12-rev (* b (- c a)) (- (* b c) (* b a)))
+ (rules-12 (- (* b c) (* b a)) (* b (- c a)))
+ (rules-13-rev (* b (+ c a)) (+ (* c b) (* b a)))
+ (rules-13 (+ (* c b) (* b a)) (* b (+ c a)))
+ (rules-14-rev (+ b (/ c a)) (/ (+ c (* a b)) a))
+ (rules-14 (/ (+ c (* a b)) a) (+ b (/ c a)))
+ (rules-15-rev (- (/ c a) b) (/ (- c (* a b)) a))
+ (rules-15 (/ (- c (* a b)) a) (- (/ c a) b))
+ (rules-16 (/ a (* c (* b a))) (/ 1 (* c b)))
+ (rules-17 (* b a) (* a b))
+ (rules-18 (+ b a) (+ a b))
+ (rules-19-rev (- a b) (neg (- b a)))
+ (rules-19 (neg (- b a)) (- a b))
+ (rules-20-rev (+ b (neg a)) (- b a))
+ (rules-20 (- b a) (+ b (neg a)))
+ (rules-21-rev (* a (neg b)) (neg (* b a)))
+ (rules-21 (neg (* b a)) (* a (neg b)))
+ (rules-22-rev (/ (neg b) a) (/ b (neg a)))
+ (rules-22 (/ b (neg a)) (/ (neg b) a))
+ (rules-23-rev (/ b (neg a)) (neg (/ b a)))
+ (rules-23 (neg (/ b a)) (/ b (neg a)))
+ (rules-24 (* a (/ b a)) b)
+ (rules-25 (* b (+ a a)) (* a (+ b b)))
+ (rules-26-rev (* (- b a) (+ a b)) (- (* b b) (* a a)))
+ (rules-26 (- (* b b) (* a a)) (* (- b a) (+ a b)))
+ (rules-27-rev (+ 1 (/ b a)) (/ (+ a b) a))
+ (rules-27 (/ (+ a b) a) (+ 1 (/ b a)))
+ (rules-28-rev (* a (- 1 b)) (- a (* b a)))
+ (rules-28 (- a (* b a)) (* a (- 1 b)))
+ (rules-29-rev (- 1 (/ b a)) (/ (- a b) a))
+ (rules-29 (/ (- a b) a) (- 1 (/ b a)))
+ (rules-30-rev (* a (+ b 1)) (+ a (* b a)))
+ (rules-30 (+ a (* b a)) (* a (+ b 1)))
+ (rules-31-rev (+ (/ b a) -1) (/ (- b a) a))
+ (rules-31 (/ (- b a) a) (+ (/ b a) -1))
+ (rules-32 (/ b (+ b (/ b a))) (/ a (+ a 1)))
+ (rules-33 (/ a (- (/ a b) a)) (/ b (- 1 b)))
+ (rules-34 (/ a (- (* a b) a)) (/ 1 (+ b -1)))
+ (rules-35-rev (neg (neg a)) a)
+ (rules-36-rev (* a 1) a)
+ (rules-37-rev (- a 0) a)
+ (rules-38-rev (/ a 1) a)
+ (rules-39-rev (+ a 0) a)
+ (rules-40 (- a a) 0)
+ (rules-41 (/ a a) 1)
+ (rules-42-rev (/ a -1) (neg a))
+ (rules-42 (neg a) (/ a -1))
+ (rules-43-rev (* a -1) (neg a))
+ (rules-43 (neg a) (* a -1))
+ (rules-44-rev (- 0 a) (neg a))
+ (rules-44 (neg a) (- 0 a))
+ (rules-45-rev (* a 2) (+ a a))
+ (rules-45 (+ a a) (* a 2))
+ (rules-46 (/ 0 a) 0)
+ (rules-47 (* a 0) 0)
+ (rules-48-rev (+ a -1) (- a 1))
+ (rules-48 (- a 1) (+ a -1))
+ (rules-49-rev (+ a 1) (- a -1))
+ (rules-49 (- a -1) (+ a 1)))
+
+(define-ruleset*
+ ruler-non-simplify
+ (ruler arithmetic)
+ #:type
+ ((a real) (b real) (c real))
+ (rules-35 a (neg (neg a)))
+ (rules-36 a (* a 1))
+ (rules-37 a (- a 0))
+ (rules-38 a (/ a 1))
+ (rules-39 a (+ a 0)))
