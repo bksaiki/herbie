@@ -61,7 +61,9 @@
                  (td ,(~a (round* (- start gained))) "/" ,(~a (round* start)))))))))
 
 (define (make-report-page out info dir #:merge-data [merge-data #f])
-  (match-define (report-info date commit branch hostname seed flags points iterations note tests) info)
+  (match-define (report-info date commit branch hostname seed flags
+                            points iterations note tests frontier)
+                info)
 
   (define-values (pareto-start pareto-points pareto-max) (trs->pareto tests))
   (cond
