@@ -85,8 +85,8 @@
   (let loop ([pts* '()] [pts pts])
     (match pts
      [(list p0 p1 p2 pns ...)
-      (define m01 (/ (- (second p1) (second p0)) (- (first p1) (first p0))))
-      (define m12 (/ (- (second p2) (second p1)) (- (first p2) (first p1))))
+      (define m01 (/ (- (cdr p1) (cdr p0)) (- (car p1) (car p0))))
+      (define m12 (/ (- (cdr p2) (cdr p1)) (- (car p2) (car p1))))
       ; if { p0, p1, p2 } are not convex:
       ;   discard p1
       ;   try backtracking one point (if not continue)
