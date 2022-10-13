@@ -34,7 +34,7 @@
                (*num-iterations*)
                note
                tests
-               (combine-pareto (map extract-frontier tests))))
+               (combine-pareto (map extract-frontier tests) #:convex? #f)))
 
 (define (write-datafile file info)
   (define (simplify-test test)

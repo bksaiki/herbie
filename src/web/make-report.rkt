@@ -6,26 +6,23 @@
 
 (provide make-report-page)
 
-(define (try-list-accessor acc fail)
-  (λ (l) (if (null? l) fail (acc l))))
-
-(define (trs->pareto trs)
-  (define cas (map table-row-cost-accuracy trs))
-  (define starts (map (try-list-accessor first (list 0 0)) cas))
-  (define ptss (map (try-list-accessor (λ (ca) (cons (second ca) (third ca)))
-                                       (list (list 0 0)))
-                    cas))
-  (define reprs (map (compose get-representation table-row-precision) trs))
-
+(define (pareto-info tests)
+  (define starts
+    (map (λ (t)
+            (match (table-row-cost-accuracy t)
+              [(list) (list 0 0)]
+              [(list start _ _) start]))
+         tests))
   (define start
     (for/fold ([x 0] [y 0] #:result (cons x y)) ([s starts])
       (values (+ x (first s)) (+ y (second s)))))
-  (define ptss*
-    (for/list ([pts ptss])
-      (for/list ([pt pts])
-        (cons (first pt) (second pt)))))
-  (define ymax (apply + (map representation-total-bits reprs)))
-  (values start (generate-pareto-curve ptss*) ymax))
+
+  (define repr-bits
+    (map (compose representation-total-bits get-representation table-row-precision)
+         tests))  
+  (define ymax (apply + repr-bits))
+  
+  (values start ymax))
 
 (define (badge-label result)
   (match (table-row-status result)
@@ -65,7 +62,9 @@
                             points iterations note tests frontier)
                 info)
 
-  (define-values (pareto-start pareto-points pareto-max) (trs->pareto tests))
+  ;; Optionally generate the combined pareto frontier plot
+  (define-values (pareto-start pareto-max) (pareto-info tests))
+  (define pareto-points (map (λ (pt) (cons (first pt) (second pt))) frontier))
   (cond
    [(not dir) (void)]
    [(> (length pareto-points) 1) ; generate the scatterplot if necessary
