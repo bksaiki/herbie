@@ -1,13 +1,12 @@
 #lang racket
 
 (require racket/date json)
-(require "common.rkt")
+(require "common.rkt" "pareto.rkt")
 
 (provide
  (struct-out table-row) (struct-out report-info)
  make-report-info read-datafile write-datafile
  merge-datafiles diff-datafiles)
-
 
 (struct table-row
   (name identifier status pre preprocess precision conversions vars
@@ -15,7 +14,14 @@
         start-est result-est time bits link cost-accuracy) #:prefab)
 
 (struct report-info
-  (date commit branch hostname seed flags points iterations note tests) #:prefab #:mutable)
+  (date commit branch hostname seed flags points iterations note tests frontier)
+  #:prefab #:mutable)
+
+(define (extract-frontier test)
+  (match (table-row-cost-accuracy test)
+   [(list) '((0 0))]
+   [(list start best rest)
+    (cons best (map (curryr take 2) rest))]))
 
 (define (make-report-info tests #:note [note ""] #:seed [seed #f])
   (report-info (current-date)
@@ -27,7 +33,8 @@
                (*num-points*)
                (*num-iterations*)
                note
-               tests))
+               tests
+               (combine-pareto (map extract-frontier tests) #:convex? #t)))
 
 (define (write-datafile file info)
   (define (simplify-test test)
@@ -69,7 +76,7 @@
   
   (define data
     (match info
-      [(report-info date commit branch hostname seed flags points iterations note tests)
+      [(report-info date commit branch hostname seed flags points iterations note tests frontier)
        (make-hash
         `((date . ,(date->seconds date))
           (commit . ,commit)
@@ -80,7 +87,8 @@
           (points . ,points)
           (iterations . ,iterations)
           (note . ,note)
-          (tests . ,(map simplify-test tests))))]))
+          (tests . ,(map simplify-test tests))
+          (frontier . ,frontier)))]))
 
   (call-with-atomic-output-file file (λ (p name) (write-json data p))))
 
@@ -137,7 +145,8 @@
                                 (get 'start) (get 'end) (get 'target)
                                 (hash-ref test 'start-est 0) (hash-ref test 'end-est 0)
                                 (get 'time) (get 'bits) (get 'link)
-                                cost-accuracy))))))
+                                cost-accuracy)))
+                 (hash-ref json 'frontier '()))))
 
 (define (unique? a)
   (or (null? a) (andmap (curry equal? (car a)) (cdr a))))
@@ -152,6 +161,15 @@
   (unless dirs
     (set! dirs (map (const #f) dfs)))
 
+  (define tests
+    (for/list ([df (in-list dfs)] [dir (in-list dirs)]
+               #:when true
+               [test (in-list (report-info-tests df))])
+      (struct-copy table-row test
+                   [link (if dir
+                             (format "~a/~a" dir (table-row-link test))
+                             (table-row-link test))])))
+
   (report-info
    (last (sort (map report-info-date dfs) < #:key date->seconds))
    (report-info-commit (first dfs))
@@ -162,13 +180,8 @@
    (report-info-points (first dfs))
    (report-info-iterations (first dfs))
    (if name (~a name) (~a (cons 'merged (map report-info-note dfs))))
-   (for/list ([df (in-list dfs)] [dir (in-list dirs)]
-              #:when true
-              [test (in-list (report-info-tests df))])
-     (struct-copy table-row test
-                  [link (if dir
-                            (format "~a/~a" dir (table-row-link test))
-                            (table-row-link test))]))))
+   tests
+   (combine-pareto (map extract-frontier tests) #:convex? #t)))
 
 (define (diff-datafiles old new)
   (define old-tests
