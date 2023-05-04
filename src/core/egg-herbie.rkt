@@ -260,7 +260,12 @@
            (define output* (desugar-program output sugar-ctx #:full #f))
            (when (andmap (curry set-member? (*needed-reprs*))
                          (append (reprs-in-expr input*) (reprs-in-expr output*)))
-             (sow (rule name* input* output* itypes* otype*))))))]))
+             (cond 
+               [(and (symbol? input*) (equal? otype 'real))
+                (define input** (desugar-program (list '+ input* 0) sugar-ctx #:full #f))
+                (sow (rule name* input** output* itypes* otype*))]
+               [else
+                (sow (rule name* input* output* itypes* otype*))])))))]))
 
 (module+ test
   ;; Make sure all built-in rules are valid in some
