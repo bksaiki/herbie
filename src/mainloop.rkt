@@ -447,9 +447,9 @@
 
   (timeline-event! 'soundness)
 
-  (define best-annotated
-    (first (add-soundiness (list best) (*pcontext*) (*context*))))
+  ; (define best-annotated
+  ;   (first (add-soundiness (list best) (*pcontext*) (*context*))))
 
   (timeline-event! 'end)
   
-  (cons best-annotated (sort rest > #:key (curryr alt-cost repr))))
+  (cons best (sort rest > #:key (curryr alt-cost repr))))
