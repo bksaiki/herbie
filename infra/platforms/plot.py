@@ -137,7 +137,6 @@ def plot_improve(name: str, output_dir: Path, info):
     flip = lambda pt: flip_point(input_cost, max_error, pt)
 
     frontier, *_ = shim_pareto(platform_cores, use_time=use_time)
-    xs, ys = zip(*frontier)
 
     # compute (speedup, accuracy) frontiers
     input_speedup, input_accuracy = flip((input_cost, input_error))
@@ -155,7 +154,7 @@ def plot_improve(name: str, output_dir: Path, info):
         input_x, input_y = input_cost, input_error
         xs, ys = zip(*frontier)
 
-    if name == 'c' and use_time:
+    if name == 'c' and info['extra'] and use_time:
         exacts = []
         fasts = []
         for flags, times, errors in info['extra']:
@@ -186,6 +185,86 @@ def plot_improve(name: str, output_dir: Path, info):
     path = output_dir.joinpath(f'{name}-pareto.png')
     plt.savefig(str(path))
     plt.close()
+
+#######################################
+# Ablation plots
+
+def plot_ablation(name: str, output_dir: Path, info):
+    """Ablation frontiers."""
+    print(f'Plotting ablation {name}')
+    time_unit = info['time_unit']
+
+    input_cores: List[FPCore] = []
+    platform_cores: List[FPCore] = []
+    nc_cores: List[FPCore] = []
+    nl_cores: List[FPCore] = []
+    n0_cores: List[FPCore] = []
+    for core_info in info['cores']:
+        platform_core_infos = core_info['platform_cores']
+        if len(platform_core_infos) > 0:
+            input_cores.append(FPCore.from_json(core_info['input_core']))
+            for platform_core_info in platform_core_infos:
+                platform_cores.append(FPCore.from_json(platform_core_info['platform_core']))
+            for nc_core_info in core_info.get('nc_cores', []):
+                nc_cores.append(FPCore.from_json(nc_core_info['nc_core']))
+            for nl_core_info in core_info.get('nl_cores', []):
+                nl_cores.append(FPCore.from_json(nl_core_info['nl_core']))
+            for n0_core_info in core_info.get('n0_cores', []):
+                n0_cores.append(FPCore.from_json(n0_core_info['n0_core']))
+
+    if nc_cores == []:
+        print(f'No ablation data found, skipping')
+        return
+    
+    # compute starting point
+    max_error = sum(map(lambda c: core_max_error(c), input_cores))
+    input_costs, input_errs = zip(*map(lambda c: (c.time if use_time else c.cost, c.err), input_cores))
+    input_cost, input_error = sum(input_costs), sum(input_errs)
+    flip = lambda pt: flip_point(input_cost, max_error, pt)
+
+    # compute frontiers
+    platform_frontier, nc_frontier, nl_frontier, n0_frontier = \
+        shim_pareto(platform_cores, nc_cores, nl_cores, n0_cores, use_time=use_time)
+
+    # compute (speedup, accuracy) frontiers
+    input_speedup, input_accuracy = flip((input_cost, input_error))
+    platform_frontier2 = list(map(flip, platform_frontier))
+    nc_frontier2 = list(map(flip, nc_frontier))
+    nl_frontier2 = list(map(flip, nl_frontier))
+    n0_frontier2 = list(map(flip, n0_frontier))
+
+    plt.figure()
+    if invert_axes:
+        xlabel = f'Speedup' if use_time else 'Estimated speedup'
+        ylabel = 'Cumulative average accuracy (bits)'
+        input_x, input_y = input_speedup, input_accuracy
+        platform_xs, platform_ys = zip(*platform_frontier2)
+        nc_xs, nc_ys = zip(*nc_frontier2)
+        nl_xs, nl_ys = zip(*nl_frontier2)
+        n0_xs, n0_ys = zip(*n0_frontier2)
+    else:
+        xlabel = f'Run time ({time_unit})' if use_time else 'Estimated cost'
+        ylabel = 'Cumulative average error (bits)'
+        input_x, input_y = input_cost, input_error
+        platform_xs, platform_ys = zip(*platform_frontier)
+        nc_xs, nc_ys = zip(*nc_frontier)
+        nl_xs, nl_ys = zip(*nl_frontier)
+        n0_xs, n0_ys = zip(*n0_frontier)
+
+    plt.plot([input_x], [input_y], input_style, color=input_color)
+    plt.plot(platform_xs, platform_ys, color=platform_color, label='TE+CL')
+    plt.plot(nc_xs, nc_ys, color=supported_color, label='CL')
+    plt.plot(nl_xs, nl_ys, color=desugared_color, label='TE')
+    plt.plot(n0_xs, n0_ys, color='purple', label='Neither')
+    plt.title(f'{xlabel} vs. {ylabel}')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+
+    path = output_dir.joinpath(f'{name}-ablation.png')
+    plt.savefig(str(path))
+    plt.close()
+
 
 #######################################
 # Comparison plots
@@ -486,6 +565,7 @@ def main():
         plot_time_all(output_dir, improve_reports)
         for name, info in improve_reports:
             plot_improve(name, output_dir, info)
+            plot_ablation(name, output_dir, info)
             plot_time(name, output_dir, info)
 
     # Baseline plot

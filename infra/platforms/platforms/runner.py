@@ -336,7 +336,9 @@ class Runner(object):
         self,
         cores: List[FPCore],
         threads: int = 1,
-        platform: Optional[str] = None
+        platform: Optional[str] = None,
+        platform_extract: bool = True,
+        cost_localize: bool = True
     ):
         """Runs Herbie improvement on benchmarks under `path` appending
         all resulting FPCores to `self.cores`."""
@@ -366,7 +368,9 @@ class Runner(object):
 
                 # call out to server
                 core_strs = ' '.join(map(lambda c: c.core, cores))
-                print(f'(improve ({core_strs}) {threads} {self.report_dir}) (exit)', file=server.stdin, flush=True)
+                platform_extract_str = '#t' if platform_extract else '#f'
+                cost_localize_str = '#t' if platform_extract_str else '#f'
+                print(f'(improve ({core_strs}) {platform_extract_str} {cost_localize_str} {threads} {self.report_dir}) (exit)', file=server.stdin, flush=True)
                 _ = server.stdout.read()
 
             # if everything went well, Herbie should have created a datafile
@@ -501,35 +505,41 @@ class Runner(object):
     def write_improve_report(
         self,
         input_cores: List[FPCore],
-        platform_cores: List[FPCore],
-        driver_dirs: List[str],
+        platform_cores: List[Tuple[FPCore, str]],
+        nc_cores: List[Tuple[FPCore, str]],
+        nl_cores: List[Tuple[FPCore, str]],
+        n0_cores: List[Tuple[FPCore, str]],
         extra
     ) -> None:
         """Writes improve data to a JSON file."""
-        # group platform cores by input [key]
-        by_key = dict()
-        for core, dir in zip(platform_cores, driver_dirs):
-            if core.key in by_key:
-                by_key[core.key].append((core, dir))
-            else:
-                by_key[core.key] = [(core, dir)]
-
-        # generate report fragments
+        # build per-input core reports
         core_reports = []
         for input_core in input_cores:
-            output_cores = by_key.get(input_core.key, [])
-            platform_core_reports = []
-            for platform_core, dir in output_cores:
-                platform_core_reports.append({
-                    'platform_core': platform_core.to_json(),
-                    'dir': str(dir),
-                })
-            
-            core_reports.append({
-                'input_core': input_core.to_json(),
-                'platform_cores': platform_core_reports
-            })
+            core_reports.append({'input_core': input_core.to_json()})
 
+        # add output core info
+        names = ['platform_core', 'nc_core', 'nl_core', 'n0_core']
+        core_groups = [platform_cores, nc_cores, nl_cores, n0_cores]
+        for cores, name in zip(core_groups, names):
+            by_key = dict()
+            for core, dir in cores:
+                if core.key in by_key:
+                    by_key[core.key].append((core, dir))
+                else:
+                    by_key[core.key] = [(core, dir)]
+
+            for i, input_core in enumerate(input_cores):
+                cores = by_key.get(input_core.key, [])
+                output_core_reports = []
+                for core, dir in cores:
+                    output_core_reports.append({
+                        name: core.to_json(),
+                        'dir': str(dir),
+                    })
+
+                core_reports[i][f'{name}s'] = output_core_reports
+
+        # build final report
         report = {
             'platform': self.name,
             'time_unit': self.time_unit,
@@ -541,6 +551,7 @@ class Runner(object):
         path = self.report_dir.joinpath('improve.json')
         with open(path, 'w') as _file:
             json.dump(report, _file)
+
 
     def write_cross_compile_report(
         self,

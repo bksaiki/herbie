@@ -31,24 +31,29 @@ default_start_seed = 1
 # Tuning and improvement
 platforms = [
     # Hardware
-    'arith',
-    'arith-fma',
-    'avx',
+    # 'arith',
+    # 'arith-fma',
+    # 'avx',
 
     # Language
     'c',
-    'python',
-    'julia',
+    # 'python',
+    # 'julia',
 
     # Library
-    'numpy',
-    'vdt'
-    'fdlibm'
+    # 'numpy',
+    # 'vdt'
+    # 'fdlibm'
+]
+
+# Platforms to run ablation in
+ablation = [
+    'c'
 ]
 
 # Evals
 evals = [
-    'baseline',
+    # 'baseline',
     #'compare',
     # ablation
 ]
@@ -125,10 +130,11 @@ def run_improvement(
         '--herbie-threads', str(num_herbie_threads),
         '--key', name,
         '--seed', str(seed),
-        platform,
-        bench_dir,
-        output_dir
     ]
+
+    if name in ablation:
+        cmd.append('--ablation')
+    cmd += [platform, bench_dir, output_dir]
 
     run_subprocess(cmd, hide_output)
 

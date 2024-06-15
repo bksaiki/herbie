@@ -117,6 +117,7 @@ def main():
     parser.add_argument('--py-sample', help='uses a Python based sampling method. Useful for debugging', action='store_const', const=True, default=False)
     parser.add_argument('--key', help='unique identifier under which to place plots and other output', type=str)
     parser.add_argument('--seed', help='random seed to use for Herbie', type=int)
+    parser.add_argument('--ablation', help='runs the ablation study', action='store_const', const=True, default=False)
     parser.add_argument('platform', help='platform to use', type=str)
     parser.add_argument('bench_path', help='directory or FPCore for Herbie to run on', type=str)
     parser.add_argument('output_dir', help='directory to emit all working files', type=str)
@@ -133,6 +134,7 @@ def main():
     num_points = args.get('num_points', default_num_points)
     num_runs = args.get('num_runs', default_num_runs)
     py_sample = args.get('py_sample')
+    ablation = args.get('ablation')
     key = args.get('key', None)
     platform = args['platform']
     bench_path = os.path.join(curr_dir, args['bench_path'])
@@ -170,13 +172,41 @@ def main():
     # run Herbie for output cores
     cores = runner.herbie_improve(cores=input_cores, threads=herbie_threads)
 
+    # optionally run ablation study
+    if ablation:
+        nc_cores = runner.herbie_improve(cores=input_cores, threads=herbie_threads, platform_extract=False)
+        nl_cores = runner.herbie_improve(cores=input_cores, threads=herbie_threads, cost_localize=False)
+        n0_cores = runner.herbie_improve(cores=input_cores, threads=herbie_threads, platform_extract=False, cost_localize=False)
+    else:
+        nc_cores = []
+        nl_cores = []
+        n0_cores = []
+
     # analyze input and output cores
-    analyze_cores(runner, input_cores + cores)
+    all_cores = input_cores + cores + nc_cores + nl_cores + n0_cores
+    analyze_cores(runner, all_cores)
+
+    # run cores to get timing
     run_cores(runner, input_cores, py_sample)
     driver_dirs = run_cores(runner, cores, py_sample)
+    if ablation:
+        nc_driver_dirs = run_cores(runner, nc_cores, py_sample)
+        nl_driver_dirs = run_cores(runner, nl_cores, py_sample)
+        n0_driver_dirs = run_cores(runner, n0_cores, py_sample)
+    else:
+        nc_driver_dirs = []
+        nl_driver_dirs = []
+        n0_driver_dirs = []
 
     # publish results
-    runner.write_improve_report(all_input_cores, cores, driver_dirs, clang_results)
+    runner.write_improve_report(
+        all_input_cores,
+        list(map(lambda c, d: (c, d), cores, driver_dirs)),
+        list(map(lambda c, d: (c, d), nc_cores, nc_driver_dirs)),
+        list(map(lambda c, d: (c, d), nl_cores, nl_driver_dirs)),
+        list(map(lambda c, d: (c, d), n0_cores, n0_driver_dirs)),
+        extra=clang_results
+    )
 
 
 if __name__ == "__main__":

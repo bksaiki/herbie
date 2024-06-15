@@ -174,12 +174,18 @@
        (define test (parse-test (datum->syntax #f core)))
        (printf "~a\n" (prog->fpcore (test-input test)(test-context test)))
        (loop)]
-      ; improve <core> <threads:int> <dir>
+      ; improve <core> <extraction:bool> <localize:bool> <threads:int> <dir>
       [(list 'improve args ...)
-       (define-values (cores threads dir)
+       (define-values (cores platform-extract? cost-localize? threads dir)
          (match args
-           [(list cores threads dir) (values cores threads dir)]
+           [(list cores platform-extract? cost-localize? threads dir)
+            (values cores platform-extract? cost-localize? threads dir)]
            [_ (error 'run-server "improve: malformed arguments ~a" args)]))
+       (if cost-localize?
+           (enable-flag! 'localize 'costs)
+           (disable-flag! 'localize 'costs))
+       (*old-cost-function* (not platform-extract?))
+
        (define tests (map (lambda (c) (parse-test (datum->syntax #f c))) cores))
        (define results (get-test-results tests #:threads threads #:seed seed #:profile #f #:dir #f))
        (define info (make-report-info (filter values results) #:seed seed))
