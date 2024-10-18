@@ -29,7 +29,8 @@ def sample1(
     py_sample: bool
 ) -> SampleType:
     if core.argc == 0:
-        return ([], [])
+        # sample using Herbie
+        return shim_sample(core, num_inputs, platform, seed)
     elif core.py_sample or py_sample:
         # sample using Python
         inputs = [sample_repr('double', num_inputs) for _ in range(core.argc)]
@@ -388,8 +389,8 @@ class Runner(object):
         for core in cores:
             sample = self.cache.get_sample(core.key, self.seed)
             if sample is not None:
-                input_points, _ = sample
-                if len(input_points[0]) >= self.num_inputs:
+                _, gts = sample
+                if len(gts) >= self.num_inputs:
                     # sample has enough points
                     num_cached += 1
                     continue

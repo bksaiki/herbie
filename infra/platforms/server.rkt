@@ -219,7 +219,7 @@
             (with-handlers ([exn:fail? (const (void))])
               (define t (parse-test stx))
               (define t* (struct-copy test t [output #f])) ; strip any `:alt` annotation
-              (printf "~a]~a|" i (string-replace (render-fpcore t*) "\n" ""))))))
+              (printf "~a###~a|" i (string-replace (render-fpcore t*) "\n" ""))))))
        (newline)
        (loop)]
       ; sample <num_points:int> <core:expr>

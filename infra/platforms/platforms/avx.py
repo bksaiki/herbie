@@ -12,7 +12,7 @@ unary_ops = ['neg', 'floor', 'sqrt', 'round', 'ceil', 'fabs']
 binary_ops = ['+', '-', '*', '/', 'fmax', 'fmin']
 ternary_ops = ['fma', 'fmsub', 'fnmadd', 'fnmsub']
 
-compiler = 'clang-18'
+compiler = 'clang'
 c_flags = ['-std=gnu11', '-ffp-contract=off', '-O2', '-mavx', '-mfma']
 ld_flags = ['-lm']
 driver_name = 'main.c'
