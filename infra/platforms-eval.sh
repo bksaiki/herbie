@@ -71,13 +71,13 @@ function run() {
 # run $BENCH_DIR/demo.fpcore demo $NUM_SEEDS
 # run $BENCH_DIR/graphics graphics $NUM_SEEDS
 # run $BENCH_DIR/hamming hamming $NUM_SEEDS
-# run $BENCH_DIR/libraries libraries $NUM_SEEDS
+run $BENCH_DIR/libraries libraries $NUM_SEEDS
 # run $BENCH_DIR/mathematics mathematics $NUM_SEEDS
-run $BENCH_DIR/numerics numerics $NUM_SEEDS
-run $BENCH_DIR/physics physics $NUM_SEEDS
-run $BENCH_DIR/haskell.fpcore haskell $NUM_SEEDS
-run $BENCH_DIR/regression.fpcore regression $NUM_SEEDS
-run $BENCH_DIR/tutorial.fpcore tutorial $NUM_SEEDS
+# run $BENCH_DIR/numerics numerics $NUM_SEEDS
+# run $BENCH_DIR/physics physics $NUM_SEEDS
+# run $BENCH_DIR/haskell.fpcore haskell $NUM_SEEDS
+# run $BENCH_DIR/regression.fpcore regression $NUM_SEEDS
+# run $BENCH_DIR/tutorial.fpcore tutorial $NUM_SEEDS
 
 python3 $INFRA_DIR/platforms/cross-plot.py "$OUTDIR/platforms/output"
 

@@ -82,15 +82,16 @@ class PythonRunner(Runner):
             no_excepts = list(map(lambda s: s == '1', output.strip().split()))
 
             # prune points that cause exceptions
-            by_points = list(zip(*input_points))
-            pruned_by_points = []
-            for pt, no_except in zip(by_points, no_excepts):
-                if no_except:
-                    pruned_by_points.append(pt)
-            
-            input_points = list(zip(*pruned_by_points))
-            num_inputs = len(pruned_by_points)
-            self.log(f'kept {num_inputs}/{len(by_points)} sampled points for {core.name}')
+            if core.argc > 0:
+                by_points = list(zip(*input_points))
+                pruned_by_points = []
+                for pt, no_except in zip(by_points, no_excepts):
+                    if no_except:
+                        pruned_by_points.append(pt)
+
+                input_points = list(zip(*pruned_by_points))
+                num_inputs = len(pruned_by_points)
+                self.log(f'kept {num_inputs}/{len(by_points)} sampled points for {core.name}')
 
             # create actual driver using pruned points
             with open(driver_path, 'w') as f:

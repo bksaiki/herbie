@@ -246,7 +246,7 @@ impl Analysis<Math> for ConstantFold {
             }
             (Some(a), Some(ref b)) => {
                 if a.0 != b.0 && !self.unsound.swap(true, Ordering::SeqCst) {
-                    log::warn!("Bad merge detected: {} != {}", a.0, b.0);
+                    log::warn!("merge(): bad merge detected: {} != {}", a.0, b.0);
                 }
                 DidMerge(false, false)
             }
@@ -256,6 +256,19 @@ impl Analysis<Math> for ConstantFold {
     fn modify(egraph: &mut EGraph, class_id: Id) {
         let class = &mut egraph[class_id];
         if let Some((c, (pat, subst))) = class.data.clone() {
+            for node in &class.nodes {
+                match node {
+                    Math::Constant(c2) => {
+                        if c != *c2 {
+                            log::warn!("modify(): bad merge detected: {} != {}", c, c2);
+                        }
+
+                        return;
+                    },
+                    _ => ()
+                }
+            }
+
             egraph.union_instantiations(
                 &pat,
                 &format!("{}", c).parse().unwrap(),
