@@ -395,13 +395,17 @@ def main():
             json_path = bench_dir.joinpath('results.json')
             with open(json_path, 'r') as f:
                 report = json.load(f)
-            
+
             for name, platform_info in report.items():
                 platform_info = report[name]
                 for field, field_info in platform_info.items():
                     if field == 'improve':
                         if name in improve_by_platform:
-                            improve_by_platform[name] = { **improve_by_platform[name], **field_info }
+                            improve_by_platform[name]['cores'] += field_info['cores']
+                            if improve_by_platform[name]['extra'] is None:
+                                improve_by_platform[name]['extra'] = field_info['extra']
+                            elif field_info['extra'] is not None:
+                                improve_by_platform[name]['extra'] += field_info['extra']
                         else:
                             improve_by_platform[name] = field_info
 
@@ -409,11 +413,31 @@ def main():
                         for name2, compare_info in field_info.items():
                             if name2 == 'baseline':
                                 if name in baseline_by_platform:
-                                    baseline_by_platform[name] = { **baseline_by_platform[name], **compare_info }
+                                    baseline_by_platform[name]['cores'] += compare_info['cores']
                                 else:
                                     baseline_by_platform[name] = compare_info
-                                pass
-    
+
+    for name, info in baseline_by_platform.items():
+        for core_info in info['cores']:
+            platform_cores = core_info['platform_cores']
+            supported_cores = core_info['supported_cores']
+            desugared_cores = core_info['desugared_cores']
+
+            for core in platform_cores:
+                if core['time'] is None or core['err'] is None:
+                    print(f'PLATFORM: missing data {core['name']}: {core['time']} {core['err']}')
+
+            for core in supported_cores:
+                if core['time'] is None or core['err'] is None:
+                    print(f'SUPPORTED: missing data {core['name']}: {core['time']} {core['err']}')
+                    supported_cores.remove(core)
+
+            for core in desugared_cores:
+                if core['time'] is None or core['err'] is None:
+                    print(f'DESUGARED: missing data {core['name']}: {core['time']} {core['err']}')
+                    desugared_cores.remove(core)
+
+
     improve_reports = []
     baseline_reports = []
     for name in sorted(report.keys(), key=lambda k: order.index(k)):

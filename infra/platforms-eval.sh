@@ -21,7 +21,7 @@ if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <output_dir> <num_seeds>"
   exit 1
 else
-  OUTDIR="$(pwd)/$1"
+  OUTDIR="$(realpath $1)"
   NUM_SEEDS=$2
 fi
 
@@ -64,14 +64,14 @@ function run() {
 # Run configs
 
 # Original:
-# run $BENCH_DIR/hamming hamming $NUM_SEEDS
-# run $BENCH_DIR/mathematics mathematics $NUM_SEEDS
+run $BENCH_DIR/hamming hamming $NUM_SEEDS
+run $BENCH_DIR/mathematics mathematics $NUM_SEEDS
 
 # Full:
 # run $BENCH_DIR/demo.fpcore demo $NUM_SEEDS
 # run $BENCH_DIR/graphics graphics $NUM_SEEDS
 # run $BENCH_DIR/hamming hamming $NUM_SEEDS
-run $BENCH_DIR/libraries libraries $NUM_SEEDS
+# run $BENCH_DIR/libraries libraries $NUM_SEEDS
 # run $BENCH_DIR/mathematics mathematics $NUM_SEEDS
 # run $BENCH_DIR/numerics numerics $NUM_SEEDS
 # run $BENCH_DIR/physics physics $NUM_SEEDS

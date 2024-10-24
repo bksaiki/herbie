@@ -256,13 +256,10 @@ impl Analysis<Math> for ConstantFold {
     fn modify(egraph: &mut EGraph, class_id: Id) {
         let class = &mut egraph[class_id];
         if let Some((c, (pat, subst))) = class.data.clone() {
+            // guard against redundant merges
             for node in &class.nodes {
                 match node {
-                    Math::Constant(c2) => {
-                        if c != *c2 {
-                            log::warn!("modify(): bad merge detected: {} != {}", c, c2);
-                        }
-
+                    Math::Constant(c2) if c == *c2 => {
                         return;
                     },
                     _ => ()
