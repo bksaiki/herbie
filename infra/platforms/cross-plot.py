@@ -182,6 +182,9 @@ def comparison_frontiers(info):
         supported_frontier, supported_frontier2, num_supported, \
         desugared_frontier, desugared_frontier2, num_desugared
 
+# ignore = ['Toniolo and Linder, Equation (7)', 'Toniolo and Linder, Equation (10-)', 'sqrt A (should all be same)', 'sqrt B (should all be same)', 'sqrt C (should all be same)', 'sqrt D (should all be same)', 'sqrt E (should all be same)', 'bug366, discussion (missed optimization)', 'x / (x^2 + 1)', 'Complex division, imag part', 'Kahan p9 Example', 'cos2 (problem 3.4.1)', 'Linear.Quaternion:$clog from linear-1.19.1.3', 'Diagrams.TwoD.Apollonian:descartes from diagrams-contrib-1.3.0.5', 'Diagrams.TwoD.Apollonian:initialConfig from diagrams-contrib-1.3.0.5, B', 'AI.Clustering.Hierarchical.Internal:ward from clustering-0.2.1', 'Statistics.Math.RootFinding:ridders from math-functions-0.1.5.2', 'Data.Array.Repa.Algorithms.Pixel:doubleRmsOfRGB8 from repa-algorithms-3.4.0.1', 'Jmat.Real.dawson'] + ['expfmod (used to be hard to sample)', '2-ancestry mixing, positive discriminant', 'Simplification of discriminant from scale-rotated-ellipse', 'Distance on a great circle', 'Jmat.Real.erf']
+ignore = []
+
 def comparison_frontiers2(info):
     input_cores: List[FPCore] = []
     platform_cores: List[FPCore] = []
@@ -192,6 +195,9 @@ def comparison_frontiers2(info):
         platform = list(map(FPCore.from_json, core_info['platform_cores']))
         supported = list(map(FPCore.from_json, core_info['supported_cores']))
         desugared = list(map(FPCore.from_json, core_info['desugared_cores']))
+
+        if input_core.name in ignore:
+            continue
 
         if platform and supported and desugared:
             input_cores.append(input_core)
@@ -214,38 +220,68 @@ def comparison_frontiers2(info):
     desugared_frontier = list(map(lambda pt: (pt[0], max_error - pt[1]), desugared_frontier))
     return (input_time, input_acc), platform_frontier, supported_frontier, desugared_frontier
 
+def has_platform_cores(info):
+    input_cores: List[FPCore] = []
+    platform_cores: List[FPCore] = []
+    supported_cores: List[FPCore] = []
+    desugared_cores: List[FPCore] = []
+    for core_info in info['cores']:
+        input_core = FPCore.from_json(core_info['input_core'])
+        platform = list(map(FPCore.from_json, core_info['platform_cores']))
+        supported = list(map(FPCore.from_json, core_info['supported_cores']))
+        desugared = list(map(FPCore.from_json, core_info['desugared_cores']))
+
+        if platform and supported and desugared:
+            input_cores.append(input_core)
+            platform_cores += platform
+            supported_cores += supported
+            desugared_cores += desugared
+
+    return len(input_cores) > 0
+
+
 def normalize(pts: List[Tuple[float, float]], pts2: List[Tuple[float, float]]):
-    norm_pts = []
+    """Normalizes each `y` value of `pts` in terms of multiples of the `y` value of `pts`."""
+    # super naive algorithm follows
+    norm_pts: list[tuple[float, float]] = []
     for pt in pts:
         before = max(filter(lambda pt2: pt2[0] <= pt[0], pts2), key=lambda pt: pt[0], default=None)
         after = min(filter(lambda pt2: pt2[0] >= pt[0], pts2), key=lambda pt: pt[0], default=None)
-        if before is None:
-            # at or below minimium x
-            # apply linear interpolation
-            pt1, pt2 = pts2[0], pts2[1]
-            m = (pt2[1] - pt1[1]) / (pt2[0] - pt1[0])
-            y = m * (pt[0] - pt1[0]) + pt1[1]
-            norm_pts.append((pt[0], y / pt[1]))
-        elif after is None:
-            # at or above maximum x
-            # applying interpolation is insane since the line is exponential
-            # pt1, pt2 = pts2[-2], pts2[-1]
-            # m = (pt2[1] - pt1[1]) / (pt2[0] - pt1[0])
-            # y = m * (pt[0] - pt2[0]) + pt2[1]
-            # print(pt2, m, y, pt[1])
-            # norm_pts.append((pt[0], y / pt[1]))
-            pass
-        elif before == after:
-            # x is the same
-            norm_pts.append((pt[0],  before[1] / pt[1]))
-        else:
-            # x is not the same
-            # apply linear interpolation
-            m = (before[1] - after[1]) / (before[0] - after[0])
-            y = m * (pt[0] - before[0]) + before[1]
-            norm_pts.append((pt[0], y / pt[1]))
+        match (before, after):
+            case (None, None):
+                # what happened?
+                raise NotImplementedError
+            case (before, None):
+                # we discard this point to bias towards the baseline
+                pass
+            case (None, after):
+                # at or below minimum x => apply linear interpolation using last points of `pts2`
+                if len(pts2) > 1:
+                    p1, p2 = pts2[0], pts2[1]
+                    m = (p2[1] - p1[1]) / (p2[0] - p1[0])
+                    y = m * (pt[0] - p1[0]) + p1[1]
+                    p = (pt[0], pt[1] / y)
+                    norm_pts.append(p)
+                else:
+                    p1 = pts2[0]
+                    y = p1[0]
+                    p = (pt[0], pt[1] / y)
+                    norm_pts.append(p)
+            case (before, after):
+                # in-between two points => apply linear interpolation
+                if before[0] == after[0]:
+                    # bail if the points are the same, take the min
+                    y = min(before[1], after[1])
+                    p = (pt[0], pt[1] / y)
+                    norm_pts.append(p)
+                else:
+                    t = (pt[0] - before[0]) / (after[0] - before[0])
+                    y = after[1] * t + (1 - t) * before[1]
+                    p = (pt[0], pt[1] / y)
+                    norm_pts.append(p)
 
     return norm_pts
+
 
 def plot_baseline_all(output_dir: Path, entries):
     """Entire baseline comparison (N)."""
@@ -261,54 +297,18 @@ def plot_baseline_all(output_dir: Path, entries):
     nrows = (num_platforms + 2) // 3 # ceil_div(num_platforms, 3)
     fig, axs = plt.subplots(ncols=3, nrows=nrows, figsize=((size, size)))
 
-    if invert_axes:
-        fig.supxlabel('Speedup' if use_time else 'Estimated speedup')
-        fig.supylabel('Sum of accuracy log2(ULP)')
-    else:
-        fig.supxlabel('Cumulative run time' if use_time else 'Cumulative estimated cost')
-        fig.supylabel('Sum of eror log2(ULP)')
+    assert invert_axes and use_time
+
+    # first mode
+    fig, axs = plt.subplots(ncols=3, nrows=nrows, figsize=((size, size)))
+    fig.supxlabel('Sum of accuracy log2(ULP)')
+    fig.supylabel('Speedup')
 
     for i, (name, info) in enumerate(entries):
-        input_pt, input_pt2, num_input, \
-            platform_frontier, platform_frontier2, num_platform, \
-            supported_frontier, supported_frontier2, num_supported, \
-            desugared_frontier, desugared_frontier2, num_desugared = comparison_frontiers(info)
-
-        # decompose frontiers
-        if invert_axes:
-            input_x, input_y = input_pt2
-            platform_xs, platform_ys = zip(*platform_frontier2)
-            supported_xs, supported_ys = zip(*supported_frontier2)
-            desugared_xs, desugared_ys = zip(*desugared_frontier2)
-        else:
-            input_x, input_y = input_pt
-            platform_xs, platform_ys = zip(*platform_frontier)
-            supported_xs, supported_ys = zip(*supported_frontier)
-            desugared_xs, desugared_ys = zip(*desugared_frontier)
-
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
         ax.set_title(display_names[name], size='medium')
-        ax.plot([input_x], [input_y], input_style, color=input_color)
-        ax.plot(platform_xs, platform_ys, platform_style, color=platform_color)
-        ax.plot(supported_xs, supported_ys, supported_style, color=supported_color)
-        ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color)
-
-    for i in range(len(names), 3 * nrows):
-        ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
-        fig.delaxes(ax)
-
-    plt.tight_layout()
-    for ext in plt_exts:
-        plt.savefig(output_dir.joinpath(f'baseline-pareto.{ext}'))
-    plt.close()
-
-    # second mode
-    if invert_axes and use_time:
-        fig, axs = plt.subplots(ncols=3, nrows=nrows, figsize=((size, size)))
-        fig.supxlabel('Sum of accuracy log2(ULP)')
-        fig.supylabel('Speedup')
     
-        for i, (name, info) in enumerate(entries):
+        if has_platform_cores(info):
             input_pt, platform_frontier, supported_frontier, desugared_frontier = comparison_frontiers2(info)
             
             # flip frontiers (x, y) -> (y, x)
@@ -316,6 +316,82 @@ def plot_baseline_all(output_dir: Path, entries):
             platform_frontier = list(map(lambda pt: (pt[1], pt[0]), platform_frontier))
             supported_frontier = list(map(lambda pt: (pt[1], pt[0]), supported_frontier))
             desugared_frontier = list(map(lambda pt: (pt[1], pt[0]), desugared_frontier))
+
+            # normalize over `input_pt[1]`
+            platform_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), platform_frontier))
+            desugared_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), desugared_frontier))
+            supported_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), supported_frontier))
+            input_pt = (input_pt[0], 1.0)
+            
+            # sort frontiers by y
+            platform_frontier.sort(key=lambda pt: pt[0])
+            supported_frontier.sort(key=lambda pt: pt[0])
+            desugared_frontier.sort(key=lambda pt: pt[0])
+
+            # platform_max = max(map(lambda pt: pt[0], platform_frontier))
+            # desugared_max = max(map(lambda pt: pt[0], desugared_frontier))
+
+            # relative_frontier = desugared_frontier
+            # input_pt = normalize([input_pt], relative_frontier)[0]
+            # platform_frontier = normalize(platform_frontier, relative_frontier)
+            # supported_frontier = normalize(supported_frontier, relative_frontier)
+            # desugared_frontier = normalize(desugared_frontier, relative_frontier)
+
+            # decompose frontiers
+            input_x, input_y = input_pt
+            platform_xs, platform_ys = zip(*platform_frontier)
+            supported_xs, supported_ys = zip(*supported_frontier)
+            desugared_xs, desugared_ys = zip(*desugared_frontier)
+
+            # plot
+            ax.plot([input_x], [input_y], input_style, color=input_color)
+            ax.plot(platform_xs, platform_ys, platform_style, color=platform_color)
+            ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none')
+            ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color)
+
+            # y-axis formatting
+            ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+            ymax = max(map(lambda pt: pt[1], platform_frontier))
+            print(name, ymax)
+        # if ymax > 2:
+        #     ax.set(ylim=(0, 4))
+        # elif ymax > 1.25:
+        #     ax.set(ylim=(0, 2))
+        # else:
+        #     ax.set(ylim=(0, 1.5))
+
+    for i in range(len(names), 3 * nrows):
+        ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
+        fig.delaxes(ax)
+    
+    plt.tight_layout()
+    for ext in plt_exts:
+        plt.savefig(output_dir.joinpath(f'baseline-pareto.{ext}'))
+    plt.close()
+
+    # second mode
+    fig, axs = plt.subplots(ncols=3, nrows=nrows, figsize=((size, size)))
+    fig.supxlabel('Sum of accuracy log2(ULP)')
+    fig.supylabel('Speedup')
+
+    for i, (name, info) in enumerate(entries):
+        ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
+        ax.set_title(display_names[name], size='medium')
+    
+        if has_platform_cores(info):
+            input_pt, platform_frontier, supported_frontier, desugared_frontier = comparison_frontiers2(info)
+            
+            # flip frontiers (x, y) -> (y, x)
+            input_pt = (input_pt[1], input_pt[0])
+            platform_frontier = list(map(lambda pt: (pt[1], pt[0]), platform_frontier))
+            supported_frontier = list(map(lambda pt: (pt[1], pt[0]), supported_frontier))
+            desugared_frontier = list(map(lambda pt: (pt[1], pt[0]), desugared_frontier))
+
+            # normalize over `input_pt[1]`
+            platform_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), platform_frontier))
+            desugared_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), desugared_frontier))
+            supported_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), supported_frontier))
+            input_pt = (input_pt[0], 1.0)
             
             # sort frontiers by y
             platform_frontier.sort(key=lambda pt: pt[0])
@@ -338,8 +414,6 @@ def plot_baseline_all(output_dir: Path, entries):
             desugared_xs, desugared_ys = zip(*desugared_frontier)
 
             # plot
-            ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
-            ax.set_title(display_names[name], size='medium')
             ax.plot([input_x], [input_y], input_style, color=input_color)
             ax.plot(platform_xs, platform_ys, platform_style, color=platform_color)
             ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none')
@@ -356,27 +430,14 @@ def plot_baseline_all(output_dir: Path, entries):
             else:
                 ax.set(ylim=(0, 1.5))
 
-            # x-axis formatting
-            # WARN: hard coded
-            # if name in ['arith', 'arith-fma', 'avx']:
-            #     ax.set(xlim=(500, 1000))
-            # else:
-            #     ax.set(xlim=(1350, 2800))
-
-            # xmin = min(map(lambda pt: pt[0], platform_frontier + supported_frontier + desugared_frontier))
-            # xmax = max(map(lambda pt: pt[0], platform_frontier + supported_frontier + desugared_frontier))
-            # print(name, xmin, xmax)
-
-            #ax.hlines(y=1, xmin=xmin, xmax=xmax, color='gray', linestyle='--')
-
-        for i in range(len(names), 3 * nrows):
-            ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
-            fig.delaxes(ax)
-        
-        plt.tight_layout()
-        for ext in plt_exts:
-            plt.savefig(output_dir.joinpath(f'baseline-pareto2.{ext}'))
-        plt.close()
+    for i in range(len(names), 3 * nrows):
+        ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
+        fig.delaxes(ax)
+    
+    plt.tight_layout()
+    for ext in plt_exts:
+        plt.savefig(output_dir.joinpath(f'baseline-pareto2.{ext}'))
+    plt.close()
 
 
 #######################################
@@ -409,12 +470,13 @@ def plot_subsuite(output_dir: Path, report):
                             for core in supported_cores:
                                 if core['time'] is None or core['err'] is None:
                                     print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
-                                    core['time'] = input_core['time']
+                                    supported_cores.remove(core)
 
                             for core in desugared_cores:
                                 if core['time'] is None:
                                     print(f'DESUGARED: missing data {core['name']}: {core['time']}')
                                     core['time'] = input_core['time']
+                                    desugared_cores.remove(core)
 
                         if name in baseline_by_platform:
                             baseline_by_platform[name]['cores'] += compare_info['cores']
@@ -441,8 +503,7 @@ def main():
             with open(json_path, 'r') as f:
                 report = json.load(f)
 
-            if bench_dir.name != 'tutorial-1' and bench_dir.name != 'graphics-1':
-                plot_subsuite(bench_dir, report)
+            plot_subsuite(bench_dir, report)
 
             for name, platform_info in report.items():
                 platform_info = report[name]
@@ -468,18 +529,18 @@ def main():
                                     for core in supported_cores:
                                         if core['time'] is None or core['err'] is None:
                                             print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
-                                            core['time'] = input_core['time']
+                                            supported_cores.remove(core)
 
                                     for core in desugared_cores:
                                         if core['time'] is None:
                                             print(f'DESUGARED: missing data {core['name']}: {core['time']}')
                                             core['time'] = input_core['time']
+                                            desugared_cores.remove(core)
 
                                 if name in baseline_by_platform:
                                     baseline_by_platform[name]['cores'] += compare_info['cores']
                                 else:
                                     baseline_by_platform[name] = compare_info
-
 
     improve_reports = []
     baseline_reports = []

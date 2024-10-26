@@ -26,3 +26,8 @@ herbie-compiled/
 
 # Python
 .env/
+
+# Eval
+asplos25-geomean/
+asplos25-all/
+asplos25-tmp/
