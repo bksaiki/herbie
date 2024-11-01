@@ -238,24 +238,9 @@ Please check each of the plots look similar to the following plots.
 Keep in mind that there is so little data,
   the exact placement of points is not NOTE.
 
-### Figure 7
-
-![Figure 7](./infra/figures/tutorial/c-pareto.png)
-
-### Figure 8
-
-![Figure 8](./infra/figures/tutorial/baseline-pareto.png)
-
-### Figure 9
-
-![Figure 9](./infra/figures/tutorial/baseline-pareto2.png)
-
-<!-- ### Figure 10
-
-![Figure 10](./infra/figures/tutorial/cost-vs-time.png)
-
-If the figures on your system look similar,
-  you are ready to run the larger evaluation. -->
+| Figure 7 | Figure 8 | Figure 9 |
+|--|--|--|
+| ![Figure 7](./infra/figures/tutorial/c-pareto.png) | ![Figure 8](./infra/figures/tutorial/baseline-pareto.png) | ![Figure 9](./infra/figures/tutorial/baseline-pareto2.png) |
 
 ## Running the evaluation
 
@@ -382,67 +367,23 @@ To demonstrate this variance,
 
 ### Figure 7
 
-### Figure 8
-
-### Figure 9
-
-
-#### 
-
-<!-- ## Analyzing the results
-
-If the evaluation runs to completion,
-  the `reports` directory should have the following structure
-```
-reports
-|-- platforms
-    |-- baseline
-    |-- cache
-    |-- drivers
-    |-- herbie-2.0
-    |-- output
-        |-- baseline-pareto.png
-        |-- baseline-pareto2.png
-        |-- c-pareto.png
-        |-- cost-vs-time.png
-```
-All plots are rendered under `reports/platforms/output`.
-The evaluation of Chassis contains 3 figures.
-Figure 7 corresponds to `hamming-1/c-pareto.pdf` (left)
-  and `mathematics-1/c-pareto.pdf` (right).
-Figure 8 corresponds to `baseline-pareto2.pdf`.
-Figure 9 corresponds to `cost-vs-time.pdf`.
-
-Since this evaluation measures real running time,
-  you should expect to see a deviation in results
-  from the figures in the paper.
-To demonstrate this variance,
-  we ran our evaluation on other machines
-  and plotted the results;
-  the figures and specs for each machine are provided below.
-The first row of each table are
-  the figures from the submitted version
-  of the paper. -->
-
-<!-- ### Figure 7
-
-| OS | CPU | RAM (GB) | NMSE | Mathematics |
-|--|--|--|--|--|
-| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 7](./infra/figures/config-1/clang-comparison-hamming.jpg) | ![Figure 7](./infra/figures/config-1/clang-comparison-mathematics.jpg) |
-| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 7](./infra/figures/config-2/hamming-c-pareto.jpg) | ![Figure 7](./infra/figures/config-2/mathematics-c-pareto.jpg) |
+| OS | CPU | RAM (GB) | Figure |
+|--|--|--|--|
+| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 7](infra/figures/config-1/c-pareto.png) |
+| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 7](infra/figures/config-2/c-pareto.png) |
 
 ### Figure 8
 
 | OS | CPU | RAM (GB) | Figure 8 |
 |--|--|--|--|
-| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 8](./infra/figures/config-1/herbie-comparison.jpg) |
-| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 8](./infra/figures/config-2/baseline-pareto2.jpg) |
+| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 8](infra/figures/config-1/baseline-pareto.png) |
+| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 8](/infra/figures/config-2/baseline-pareto.png) |
 
 ### Figure 9
 
 | OS | CPU | RAM (GB) | Figure 9 |
 |--|--|--|--|
-| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 9](./infra/figures/config-1/cost-vs-time.jpg) |
-| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 9](./infra/figures/config-2/cost-vs-time.jpg) | -->
+| Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 9](infra/figures/config-1/baseline-pareto2.png) |
+| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 9](infra/figures/config-2/baseline-pareto2.png) |
 
 ## Auto-Tuning Cost Models
