@@ -123,17 +123,15 @@
          (match args
            [(list core platform) (values core platform)]
            [_ (error 'run-server "desugar: malformed arguments ~a" args)]))
-       (define test (parse-test (datum->syntax #f core)))
-       (define expr* (desugar-expr (test-input test) (test-context test) platform))
-       (cond
-         [expr*
-          (define core
-            `(FPCore ,(test-vars test)
-                     :name ,(test-name test)
-                     ,(prog->fpcore expr* (test-output-repr test))))
-          (writeln core)]
-         [else
-          (writeln #f)])
+       (define core*
+         (with-handlers ([exn:fail:user:herbie? (lambda _ #f)])
+           (define test (parse-test (datum->syntax #f core)))
+           (define expr* (desugar-expr (test-input test) (test-context test) platform))
+           (and expr*
+                `(FPCore ,(test-vars test)
+                         :name ,(test-name test)
+                         ,(prog->fpcore expr* (test-output-repr test))))))
+       (writeln core*)
        (loop)]
       ; error <points> <core>
       [(list 'error args ...)
@@ -219,7 +217,7 @@
             (with-handlers ([exn:fail? (const (void))])
               (define t (parse-test stx))
               (define t* (struct-copy test t [output #f])) ; strip any `:alt` annotation
-              (printf "~a]~a|" i (string-replace (render-fpcore t*) "\n" ""))))))
+              (printf "~a###~a|" i (string-replace (render-fpcore t*) "\n" ""))))))
        (newline)
        (loop)]
       ; sample <num_points:int> <core:expr>

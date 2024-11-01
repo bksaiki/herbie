@@ -109,6 +109,16 @@
              (round-mode->avx* (ctx-lookup-prop context ':round)))]
     ['fabs
      (format "_mm256_andnot_~a(_mm256_set1_~a(-0.0), ~a)" suffix suffix (first arguments))]
+    ['avx-rsqrt
+     (match precision
+       ['binary64 (format "_m256_cvtps_pd(_mm_rsqrt_ps(_m256_cvtpd_ps(~a)))" (first arguments))]
+       ['binary32 (format "_mm256_rsqrt_ps(~a)" (first arguments))]
+       [_ (error 'operator->avx "unknown type ~a for 'avx-rsqrt" type)])]
+    ['avx-recip
+     (match precision
+       ['binary64 (format "_m256_cvtps_pd(_mm_rcp_ps(_m256_cvtpd_ps(~a)))" (first arguments))]
+       ['binary32 (format "_mm256_rcp_ps(~a)" (first arguments))]
+       [_ (error 'operator->avx "unknown type ~a for 'avx-rsqrt" type)])]
     [_ 
      (define name
        (match operator

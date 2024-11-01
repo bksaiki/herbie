@@ -57,7 +57,6 @@ def shim_error(
 ) -> List[float]:
     pcontext = sample_to_pcontext(sample)
     core_strs = ' '.join(map(lambda c: str(c.core), cores))
-
     results = run_server([f'(error {pcontext} {core_strs})'], platform=platform, seed=seed)
     output = results[0].strip()
 
@@ -85,8 +84,9 @@ def shim_sample(
         if len(parts) != 2:
             raise RuntimeError(f'malformed point {input}')
 
-        for i, val in enumerate(parts[0].split(' ')):
-            points[i].append(racket_to_py(val.strip()))
+        if parts[0] != '':
+            for i, val in enumerate(parts[0].split(' ')):
+                points[i].append(racket_to_py(val.strip()))
         gts.append(racket_to_py(parts[1].strip()))
 
     return (points, gts)
@@ -102,7 +102,7 @@ def shim_read(
         output = results[0].strip()
         for line in output.split('|'):
             if len(line) > 0:
-                parts = line.strip().split(']')
+                parts = line.strip().split('###')
                 if len(parts) != 2:
                     raise ValueError(f'Unexpected result: {line}')
 

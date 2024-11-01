@@ -63,14 +63,16 @@
       (define initial-cost* (exact->inexact initial-cost))
       (for/list ([point (in-list (list* initial-point best-point other-points))])
         (match-define (list cost accuracy _ ...) point)
-        (list (/ cost initial-cost*) accuracy))))
+        ;(list (/ cost initial-cost*) accuracy))))
+        (list (log (/ cost initial-cost*)) accuracy))))
   (define frontier
     (map
      (match-lambda
        [(list cost accuracy)
         (list
          ;; Equivalent to (/ 1 (/ cost tests-length))
-         (/ 1 (/ cost tests-length))
+         ;(/ 1 (/ cost tests-length))
+          (/ 1 (exp (/ cost tests-length)))
          (- 1 (/ accuracy maximum-accuracy)))])
      (pareto-combine rescaled #:convex? #t)))
   (define maximum-cost
