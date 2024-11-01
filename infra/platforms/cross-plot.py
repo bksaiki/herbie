@@ -22,6 +22,9 @@ platform_color = '#0072B2'
 supported_color = '#009E73'
 desugared_color = '#D55E00'
 
+dot_size = 4
+dot_size2 = 3
+
 input_style = 's'
 platform_style = '.'
 supported_style = '2'
@@ -122,7 +125,7 @@ def plot_time_all(output_dir: Path, entries):
 
     plt.tight_layout()
     for ext in plt_exts:
-        plt.savefig(output_dir.joinpath(f'cost-vs-time.{ext}'))
+        plt.savefig(output_dir.joinpath(f'cost-vs-time.{ext}'), dpi=300)
     plt.close()
 
     print('min_rho:', min_rho)
@@ -344,21 +347,28 @@ def plot_baseline_all(output_dir: Path, entries):
             desugared_xs, desugared_ys = zip(*desugared_frontier)
 
             # plot
-            ax.plot([input_x], [input_y], input_style, color=input_color)
-            ax.plot(platform_xs, platform_ys, platform_style, color=platform_color)
-            ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none')
-            ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color)
+            ax.plot([input_x], [input_y], input_style, color=input_color, )
+            ax.plot(platform_xs, platform_ys, platform_style, color=platform_color, markersize=dot_size2)
+            ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none', markersize=dot_size2)
+            ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color, markersize=dot_size2)
 
             # y-axis formatting
             ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
             ymax = max(map(lambda pt: pt[1], platform_frontier))
             print(name, ymax)
-        # if ymax > 2:
-        #     ax.set(ylim=(0, 4))
-        # elif ymax > 1.25:
-        #     ax.set(ylim=(0, 2))
-        # else:
-        #     ax.set(ylim=(0, 1.5))
+
+            if name == 'avx' or name == 'arith' or name == 'arith-fma':
+                ax.set(ylim=(0, 3.0))
+            elif name == 'c' or name == 'vdt' or name == 'fdlibm':
+                ax.set(ylim=(0, 10.0))
+            elif name == 'numpy':
+                ax.set(ylim=(0, 15.0))
+            elif name == 'python':
+                ax.set(ylim=(0, 2.0))
+            elif name == 'julia':
+                ax.set(ylim=(0, 1.5))
+            else:
+                raise NotImplementedError
 
     for i in range(len(names), 3 * nrows):
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
@@ -366,7 +376,7 @@ def plot_baseline_all(output_dir: Path, entries):
     
     plt.tight_layout()
     for ext in plt_exts:
-        plt.savefig(output_dir.joinpath(f'baseline-pareto.{ext}'))
+        plt.savefig(output_dir.joinpath(f'baseline-pareto.{ext}'), dpi=300)
     plt.close()
 
     # second mode
@@ -415,9 +425,9 @@ def plot_baseline_all(output_dir: Path, entries):
 
             # plot
             ax.plot([input_x], [input_y], input_style, color=input_color)
-            ax.plot(platform_xs, platform_ys, platform_style, color=platform_color)
-            ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none')
-            ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color)
+            ax.plot(platform_xs, platform_ys, platform_style, color=platform_color, markersize=dot_size)
+            ax.plot(supported_xs, supported_ys, supported_style, color=supported_color, mfc='none', markersize=dot_size)
+            ax.plot(desugared_xs, desugared_ys, desugared_style, color=desugared_color, markersize=dot_size)
 
             # y-axis formatting
             ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
@@ -436,7 +446,77 @@ def plot_baseline_all(output_dir: Path, entries):
     
     plt.tight_layout()
     for ext in plt_exts:
-        plt.savefig(output_dir.joinpath(f'baseline-pareto2.{ext}'))
+        plt.savefig(output_dir.joinpath(f'baseline-pareto2.{ext}'), dpi=300)
+    plt.close()
+
+def plot_c_pareto(output_dir: Path, info):
+    """Plots Chassis vs. Clang across all benchmarks"""
+    print('Plotting Chassis vs. Clang (C)')
+    size = 4.5
+    plt.figure(figsize=(size, size))
+
+    assert invert_axes and use_time
+
+    input_cores: List[FPCore] = []
+    platform_cores: List[FPCore] = []
+    for core_info in info['cores']:
+        core_infos = core_info['platform_cores']
+        if len(core_infos) > 0:
+            input_cores.append(FPCore.from_json(core_info['input_core']))
+            for platform_core_info in core_infos:
+                platform_cores.append(FPCore.from_json(platform_core_info['platform_core']))
+    
+    # compute starting point
+    max_error = sum(map(lambda c: core_max_error(c), input_cores))
+
+    o0_time = None
+    for flags, times, errors in info['extra']:
+        if '-O0' in flags and '-ffast-math' not in flags:
+            o0_time = sum(times)
+            break
+
+    if o0_time is None:
+        raise RuntimeError('Could not find baseline configuration: -O0')
+    flip = lambda pt: flip_point(o0_time, max_error, pt)
+
+    exacts = []
+    fasts = []
+    for flags, times, errors in info['extra']:
+        if times == []:
+            continue
+
+        input_time, input_error = sum(times), sum(errors)
+        input_speedup, input_accuracy = flip((input_time, input_error))
+        input_x = input_speedup if invert_axes else input_time
+        input_y = input_accuracy if invert_axes else input_error
+        if '-ffast-math' in flags:
+            fasts.append((input_x, input_y))
+        else:
+            exacts.append((input_x, input_y))
+
+    exact_xs, exact_ys = zip(*exacts)
+    plt.plot(exact_xs, exact_ys, 'X', color=input_color, label='Clang')
+
+    fast_xs, fast_ys = zip(*fasts)
+    plt.plot(fast_xs, fast_ys, 'P', color=desugared_color, label='Clang (fast-math)')
+
+    # compute (speedup, accuracy) frontiers
+    frontier, *_ = shim_pareto(platform_cores, use_time=use_time)
+    frontier2 = list(map(flip, frontier))
+
+    xlabel = f'Speedup' if use_time else 'Estimated speedup'
+    ylabel = 'Sum of accuracy log2(ULP)'
+    xs, ys = zip(*frontier2)
+
+    plt.plot(xs, ys, platform_style, color=platform_color, label='Chassis', markersize=dot_size)
+    plt.xlabel(xlabel, fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.tight_layout()
+
+    for ext in plt_exts:
+        plt.savefig(output_dir.joinpath(f'c-pareto.{ext}'), dpi=300)
     plt.close()
 
 
@@ -444,22 +524,11 @@ def plot_baseline_all(output_dir: Path, entries):
 # Entrypoint
 
 def plot_subsuite(output_dir: Path, report):
-    improve_by_platform = dict()
     baseline_by_platform = dict()
     for name, platform_info in report.items():
         platform_info = report[name]
         for field, field_info in platform_info.items():
-            if field == 'improve':
-                if name in improve_by_platform:
-                    improve_by_platform[name]['cores'] += field_info['cores']
-                    if improve_by_platform[name]['extra'] is None:
-                        improve_by_platform[name]['extra'] = field_info['extra']
-                    elif field_info['extra'] is not None:
-                        improve_by_platform[name]['extra'] += field_info['extra']
-                else:
-                    improve_by_platform[name] = field_info
-
-            elif field == 'compare':
+            if field == 'compare':
                 for name2, compare_info in field_info.items():
                     if name2 == 'baseline':
                         for core_info in compare_info['cores']:
@@ -503,7 +572,7 @@ def main():
             with open(json_path, 'r') as f:
                 report = json.load(f)
 
-            plot_subsuite(bench_dir, report)
+            # plot_subsuite(bench_dir, report)
 
             for name, platform_info in report.items():
                 platform_info = report[name]
@@ -514,7 +583,11 @@ def main():
                             if improve_by_platform[name]['extra'] is None:
                                 improve_by_platform[name]['extra'] = field_info['extra']
                             elif field_info['extra'] is not None:
-                                improve_by_platform[name]['extra'] += field_info['extra']
+                                for config1, config2 in zip(improve_by_platform[name]['extra'], field_info['extra']):
+                                    _, times1, errors1 = config1
+                                    _, times2, errors2 = config2
+                                    times1 += times2
+                                    errors1 += errors2
                         else:
                             improve_by_platform[name] = field_info
 
@@ -541,6 +614,9 @@ def main():
                                     baseline_by_platform[name]['cores'] += compare_info['cores']
                                 else:
                                     baseline_by_platform[name] = compare_info
+
+    if 'c' in improve_by_platform:
+        plot_c_pareto(output_dir, improve_by_platform['c'])
 
     improve_reports = []
     baseline_reports = []

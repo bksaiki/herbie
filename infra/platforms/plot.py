@@ -143,6 +143,9 @@ def plot_improve(name: str, output_dir: Path, info):
             for platform_core_info in core_infos:
                 platform_cores.append(FPCore.from_json(platform_core_info['platform_core']))
     time_unit = info['time_unit']
+
+    if input_cores == []:
+        return
     
     # compute starting point
     max_error = sum(map(lambda c: core_max_error(c), input_cores))
@@ -220,6 +223,25 @@ def plot_improve(name: str, output_dir: Path, info):
 #######################################
 # Comparison plots
 
+def has_platform_cores(info):
+    input_cores: List[FPCore] = []
+    platform_cores: List[FPCore] = []
+    supported_cores: List[FPCore] = []
+    desugared_cores: List[FPCore] = []
+    for core_info in info['cores']:
+        input_core = FPCore.from_json(core_info['input_core'])
+        platform = list(map(FPCore.from_json, core_info['platform_cores']))
+        supported = list(map(FPCore.from_json, core_info['supported_cores']))
+        desugared = list(map(FPCore.from_json, core_info['desugared_cores']))
+
+        if platform and supported and desugared:
+            input_cores.append(input_core)
+            platform_cores += platform
+            supported_cores += supported
+            desugared_cores += desugared
+
+    return len(input_cores) > 0
+
 def comparison_frontiers(info):
     num_input = 0
     num_platform = 0
@@ -274,6 +296,9 @@ def comparison_frontiers(info):
 def plot_compare1(name: str, name2: str, output_dir: Path, info):
     """Single platform vs. platform comparison"""
     print(f'Plotting compare {name} <- {name2}')
+
+    if not has_platform_cores(info):
+        return
 
     input_pt, _, num_input, \
         platform_frontier, _, num_platform, \
@@ -333,6 +358,9 @@ def plot_baseline_all(output_dir: Path, entries):
         fig.supylabel('Cumulative average eror log2(ULP)')
 
     for i, (name, info) in enumerate(entries):
+        if not has_platform_cores(info):
+            return
+
         input_pt, input_pt2, num_input, \
             platform_frontier, platform_frontier2, num_platform, \
             supported_frontier, supported_frontier2, num_supported, \
