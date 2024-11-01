@@ -188,6 +188,7 @@ def run_seed(
     output_dir: str,
     key: str,
     num_threads: int,
+    num_herbie_threads: int,
     seed: int,
     hide_output: bool
 ) -> None:
@@ -199,7 +200,7 @@ def run_seed(
             platform=platform,
             bench_dir=bench_path,
             output_dir=output_dir,
-            num_herbie_threads=num_threads,
+            num_herbie_threads=num_herbie_threads,
             num_threads=num_threads,
             seed=seed,
             hide_output=hide_output
@@ -249,6 +250,7 @@ def main():
     parser.add_argument('--key', help='unique identifier for run [default: \'default\']', type=str)
     parser.add_argument('--parallel', help='maximum number of parallel runs [default: 1]', type=int)
     parser.add_argument('--threads', help='maximum number of threads [default: 1]', type=int)
+    parser.add_argument('--herbie-threads', help='maximum number of threads for Chassis/Herbie [default: 1]', type=int)
     parser.add_argument('--start-seed', help='first seed to run (sequentially) [default: 1]', type=int)
     args = parser.parse_args()
 
@@ -259,6 +261,7 @@ def main():
     key: str = args.key or default_key
     num_parallel: int = args.parallel or default_num_parallel
     num_threads: int = args.threads or default_num_threads
+    num_herbie_threads: int = args.herbie_threads or default_num_threads
     start_seed: int = args.start_seed or default_start_seed
 
     # baseline evaluation
@@ -268,7 +271,7 @@ def main():
             bench_path=bench_path,
             output_dir=output_dir,
             num_parallel=num_parallel,
-            num_threads=num_threads,
+            num_threads=num_herbie_threads,
             num_seeds=num_seeds,
             start_seed=start_seed
         )
@@ -282,6 +285,7 @@ def main():
             output_dir,
             f'{key}-{seed}',
             num_threads,
+            num_herbie_threads,
             seed,
             hide_output
         ))

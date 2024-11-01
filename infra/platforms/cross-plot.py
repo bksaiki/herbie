@@ -310,10 +310,10 @@ def plot_baseline_all(output_dir: Path, entries):
     for i, (name, info) in enumerate(entries):
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
         ax.set_title(display_names[name], size='medium')
-    
+
         if has_platform_cores(info):
             input_pt, platform_frontier, supported_frontier, desugared_frontier = comparison_frontiers2(info)
-            
+
             # flip frontiers (x, y) -> (y, x)
             input_pt = (input_pt[1], input_pt[0])
             platform_frontier = list(map(lambda pt: (pt[1], pt[0]), platform_frontier))
@@ -325,7 +325,7 @@ def plot_baseline_all(output_dir: Path, entries):
             desugared_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), desugared_frontier))
             supported_frontier = list(map(lambda pt: (pt[0], input_pt[1] / pt[1]), supported_frontier))
             input_pt = (input_pt[0], 1.0)
-            
+
             # sort frontiers by y
             platform_frontier.sort(key=lambda pt: pt[0])
             supported_frontier.sort(key=lambda pt: pt[0])
@@ -373,7 +373,7 @@ def plot_baseline_all(output_dir: Path, entries):
     for i in range(len(names), 3 * nrows):
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
         fig.delaxes(ax)
-    
+
     plt.tight_layout()
     for ext in plt_exts:
         plt.savefig(output_dir.joinpath(f'baseline-pareto.{ext}'), dpi=300)
@@ -387,7 +387,7 @@ def plot_baseline_all(output_dir: Path, entries):
     for i, (name, info) in enumerate(entries):
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
         ax.set_title(display_names[name], size='medium')
-    
+
         if has_platform_cores(info):
             input_pt, platform_frontier, supported_frontier, desugared_frontier = comparison_frontiers2(info)
             
@@ -571,8 +571,6 @@ def main():
             json_path = bench_dir.joinpath('results.json')
             with open(json_path, 'r') as f:
                 report = json.load(f)
-
-            # plot_subsuite(bench_dir, report)
 
             for name, platform_info in report.items():
                 platform_info = report[name]
