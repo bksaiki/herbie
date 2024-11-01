@@ -20,9 +20,10 @@ The machine we used for our evaluation
   running Ubuntu 20.04 LTS.
 We ran our evaluation using `bash`.
 
-This guide comes in three parts:
+This guide comes in four parts:
  - Installation
  - Testing
+ - Kick the Tires
  - Evaluation
 
 ## Installation
@@ -69,7 +70,7 @@ We recommend creating a virtual environment
   by running the following series of commands.
 Create the virtual environment under `.env` with
 ```
-python -m venv .env/
+python3 -m venv .env/
 ```
 Activate the virtual environment using
 ```
@@ -109,10 +110,20 @@ This may require root access depending on your system.
 ### libvdt
 
 The vdt library is a vectorized math library developed at CERN.
-To install, clone the [repo](https://github.com/dpiparo/vdt).
-Then, navigate to the `vdt` directory and run
+To install, clone the [repo](https://github.com/dpiparo/vdt):
 ```
-cmake .
+git clone https://github.com/dpiparo/vdt
+```
+Then, navigate to the `vdt` directory.
+If you're on an x86 machine, run
+```
+cmake -DAVX=1 .
+make
+make install
+```
+If you're on an ARM machine, run
+```
+cmake -DNEON=1 .
 make
 make install
 ```
@@ -123,7 +134,7 @@ The final step possibly requires root access.
 Ensure you have Chassis cloned from git,
   if you have not cloned it already.
 ```
-git clone https://github.com/herbie-fp/herbie
+git clone https://github.com/bksaiki/herbie
 git checkout asplos25-aec
 ```
 Chassis requires Racket and Rust to build.
@@ -187,9 +198,9 @@ If any of the commands above failed unexpectedly,
   return to the corresponding subsection
   in the installation section.
 
-## Running the evaluation
+## Kick the tires
 
-**IMPORTANT**:
+**NOTE**:
 If your system is running on ARM,
   set the environment variable `NO_AVX` before
   running the subsequent command.
@@ -197,18 +208,188 @@ If your system is running on ARM,
 export NO_AVX=1
 ```
 
-To start the evaluation, run
+To test if the evaluation will run end-to-end,
+  you will run the evaluation on a small set
+  of benchmarks.
+To run this small evaluation, run
 ```
-bash infra/platforms-eval.sh reports 1
+THREADS=<n> bash infra/platforms-eval.sh reports bench/tutorial.fpcore
 ```
-This command runs the entire evaluation.
-The whole process takes 2-3 hours depending the machine.
-We recommend using `tmux` so that the process can be detached.
-Since the evaluation measures real time,
-  we recommend not using any other application while it is running,
-  and closing any open application before running it.
+where `n` is the number of threads you want to run the evaluation with.
+We recommend using 4 threads since some phases of
+  the evaluation are memory-intensive.
+This command should take about 10 to 20 minutes.
+If the evaluation runs to completion,
+  the `reports` directory should have the following structure:
+```
+reports
+|-- platforms
+    |-- baseline
+    |-- cache
+    |-- drivers
+    |-- herbie-2.0
+    |-- output
+        |-- baseline-pareto.png
+        |-- baseline-pareto2.png
+        |-- c-pareto.png
+        |-- cost-vs-time.png
+```
+Please check each of the plots look similar to the following plots.
+Keep in mind that there is so little data,
+  the exact placement of points is not NOTE.
 
-## Analyzing the results
+### Figure 7
+
+![Figure 7](./infra/figures/tutorial/c-pareto.png)
+
+### Figure 8
+
+![Figure 8](./infra/figures/tutorial/baseline-pareto.png)
+
+### Figure 9
+
+![Figure 9](./infra/figures/tutorial/baseline-pareto2.png)
+
+<!-- ### Figure 10
+
+![Figure 10](./infra/figures/tutorial/cost-vs-time.png)
+
+If the figures on your system look similar,
+  you are ready to run the larger evaluation. -->
+
+## Running the evaluation
+
+Our paper has 3 quantitative evaluations:
+ - **Can Chassis compile to a diverse set of targets? (Section 6.1)**:
+  Our evaluation uses 9 targets in total:
+    3 targets involving traditional ISAs,
+    3 targets involving programming languages,
+    and 3 targets involving software libraries.
+  We list their characteristics in Figure 6.
+ - **Does Chassis produce faster code, for a given accuracy,
+  than the traditional compiler Clang? (Section 6.2)**:
+  We show that Chassis finds better accuracy/speedup tradeoffs
+    than Clang, at various optimization levels,
+    both with and without fast-math.
+  Figure 7 shows the aggregated results over 547 benchmarks.
+ - **Does Chassis produce faster code,
+  for a given accuracy,
+  than the numerical compiler Herbie? (Section 6.3)**:
+  We show that Chassis finds better accuracy/speedup tradeoffs
+    than Herbie, the current state-of-the-art
+    floating-point accuracy improver, on all 9 targets.
+  These results are in Figures 8 and 9.
+
+Most of our experiments take about a day to run in full.
+We recommend first running the evaluation on a subset of the benchmarks used in the paper.
+This smaller subset takes about 2 to 3 hours in total.
+The evaluation section is split into 2 parts.
+1. Implementing Targets (Q1)
+2. Comparing to Chassis and Herbie (Q2 and Q3)
+
+### 1. Implementing Targets
+
+The goal of this section is to check
+  that Chassis implements the 9 targets
+  described in the table in Figure 6.
+
+
+
+### 2. Comparing to Chassis and Herbie
+
+The goal of this section is to reproduce
+  the plots in Figures 7, 8, and 9.
+To reiterate,
+  the _full_ evaluation will take about a _day_ to run.
+We provide instructions on how to run
+  on a subset of the benchmarks,
+  which takes 2 to 3 hours.
+
+**NOTE**:
+If your system is running on ARM,
+  set the environment variable `NO_AVX` before
+  continuing with the rest of this section!
+```
+export NO_AVX=1
+```
+
+**NOTE**:
+This evaluation is measuring real time.
+We recommend closing any application before
+  starting this section of the evaluation,
+  and not using any other application while
+  it is running.
+
+**NOTE**:
+Most of the targets use auto-tuned cost models.
+These values are tuned for the machine
+  that we used for our evaluation.
+We do not recommend re-tuning these models
+  are it is a mostly manual process.
+Of course,
+  the more your machine differs from the machine
+  used for our evaluation, the acceptable variance in plots
+  in this section should be much higher.
+We provide instructions on
+  how to re-tune the cost models 
+  under the "Auto-Tuning Cost Models" section.
+
+### Steps
+
+To start the evaluation,
+  run either 
+```bash
+THREADS=<n> bash infra/platforms-eval.sh reports bench/hamming bench/mathematics
+```
+for the reduced evaluation, or
+```bash
+THREADS=<n> bash infra/platforms-eval.sh reports bench/*
+```
+for the full evaluation,
+  where `n` is the number of threads you wish to use.
+Again,
+  we recommend 4 threads since
+  some parts of this process are
+  memory-intensive.
+This will generate all the necessary figures.
+We recommend using `tmux` so that the process can be detached.
+The reduced evaluation should take 2 to 3 hours
+  while the full evaluation should take about a day.
+
+If the evaluation runs to completion,
+  the `reports` directory should have the following structure:
+```
+reports
+|-- platforms
+    |-- baseline
+    |-- cache
+    |-- drivers
+    |-- herbie-2.0
+    |-- output
+        |-- baseline-pareto.png
+        |-- baseline-pareto2.png
+        |-- c-pareto.png
+        |-- cost-vs-time.png
+```
+All plots are rendered under `reports/platforms/output`.
+Figure 7 corresponds to `c-pareto.png`,
+  Figure 8 corresponds to `baseline-pareto.png`,
+  and Figure 9 corresponds to `baseline-pareto2.png`.
+
+To demonstrate this variance,
+  we ran the **reduced** evaluation on other machines;
+  the figures and specs for each machine are provided below.
+
+### Figure 7
+
+### Figure 8
+
+### Figure 9
+
+
+#### 
+
+<!-- ## Analyzing the results
 
 If the evaluation runs to completion,
   the `reports` directory should have the following structure
@@ -220,12 +401,10 @@ reports
     |-- drivers
     |-- herbie-2.0
     |-- output
-        |-- hamming-1
-            |-- c-pareto.pdf
-        |-- mathematics-1
-            |-- c-pareto.pdf
-        |-- cost-vs-time.pdf
-        |-- baseline-pareto2.pdf
+        |-- baseline-pareto.png
+        |-- baseline-pareto2.png
+        |-- c-pareto.png
+        |-- cost-vs-time.png
 ```
 All plots are rendered under `reports/platforms/output`.
 The evaluation of Chassis contains 3 figures.
@@ -243,9 +422,9 @@ To demonstrate this variance,
   the figures and specs for each machine are provided below.
 The first row of each table are
   the figures from the submitted version
-  of the paper.
+  of the paper. -->
 
-### Figure 7
+<!-- ### Figure 7
 
 | OS | CPU | RAM (GB) | NMSE | Mathematics |
 |--|--|--|--|--|
@@ -264,4 +443,6 @@ The first row of each table are
 | OS | CPU | RAM (GB) | Figure 9 |
 |--|--|--|--|
 | Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 9](./infra/figures/config-1/cost-vs-time.jpg) |
-| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 9](./infra/figures/config-2/cost-vs-time.jpg) |
+| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 9](./infra/figures/config-2/cost-vs-time.jpg) | -->
+
+## Auto-Tuning Cost Models
