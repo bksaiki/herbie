@@ -90,9 +90,9 @@ function run() {
 # Run configs
 for path in "$@"
 do
-  filename="${path##*/}"
-  basename="${filename%.*}"
-  run $(realpath $path) $basename $NUM_SEEDS
+  bench_path="$(realpath $path)"
+  basename="$(basename $path)"
+  run $bench_path $basename $NUM_SEEDS
 done
 
 # Plotting
