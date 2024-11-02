@@ -371,13 +371,15 @@ To demonstrate this variance,
 |--|--|--|--|
 | Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 7](infra/figures/config-1/c-pareto.png) |
 | Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 7](infra/figures/config-2/c-pareto.png) |
+| Ubuntu 24.04.1 LTS | Intel Ultra 7 155H | 16 | ![Figure 7](infra/figures/config-3/c-pareto.png) |
 
 ### Figure 8
 
 | OS | CPU | RAM (GB) | Figure 8 |
 |--|--|--|--|
 | Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 8](infra/figures/config-1/baseline-pareto.png) |
-| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 8](/infra/figures/config-2/baseline-pareto.png) |
+| Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 8](infra/figures/config-2/baseline-pareto.png) |
+| Ubuntu 24.04.1 LTS | Intel Ultra 7 155H | 16 | ![Figure 8](infra/figures/config-3/baseline-pareto.png) |
 
 ### Figure 9
 
@@ -385,5 +387,6 @@ To demonstrate this variance,
 |--|--|--|--|
 | Ubuntu 20.04.6 LTS | AMD EPYC 7702P | 512 | ![Figure 9](infra/figures/config-1/baseline-pareto2.png) |
 | Ubuntu 22.04.2 LTS | Intel i5-8279U | 16 | ![Figure 9](infra/figures/config-2/baseline-pareto2.png) |
+| Ubuntu 24.04.1 LTS | Intel Ultra 7 155H | 16 | ![Figure 9](infra/figures/config-3/baseline-pareto2.png) |
 
 ## Auto-Tuning Cost Models

@@ -357,18 +357,18 @@ def plot_baseline_all(output_dir: Path, entries):
             ymax = max(map(lambda pt: pt[1], platform_frontier))
             print(name, ymax)
 
-            if name == 'avx' or name == 'arith' or name == 'arith-fma':
-                ax.set(ylim=(0, 3.0))
-            elif name == 'c' or name == 'vdt' or name == 'fdlibm':
-                ax.set(ylim=(0, 10.0))
-            elif name == 'numpy':
-                ax.set(ylim=(0, 15.0))
-            elif name == 'python':
-                ax.set(ylim=(0, 2.0))
-            elif name == 'julia':
-                ax.set(ylim=(0, 1.5))
-            else:
-                raise NotImplementedError
+            # if name == 'avx' or name == 'arith' or name == 'arith-fma':
+            #     ax.set(ylim=(0, 3.0))
+            # elif name == 'c' or name == 'vdt' or name == 'fdlibm':
+            #     ax.set(ylim=(0, 10.0))
+            # elif name == 'numpy':
+            #     ax.set(ylim=(0, 15.0))
+            # elif name == 'python':
+            #     ax.set(ylim=(0, 2.0))
+            # elif name == 'julia':
+            #     ax.set(ylim=(0, 1.5))
+            # else:
+            #     raise NotImplementedError
 
     for i in range(len(names), 3 * nrows):
         ax = axs[i // 3, i % 3] if num_platforms > 3 else axs[i]
