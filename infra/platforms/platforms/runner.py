@@ -4,8 +4,8 @@ from pathlib import Path
 
 import json
 import multiprocessing as mp
+import os
 import shutil
-import json
 
 from .cache import Cache
 from .fpcore import FPCore, parse_core
@@ -355,23 +355,29 @@ class Runner(object):
         gen_cores: List[FPCore] = []
         num_improved = 0
         if len(cores) > 0:
+            core_strs = ' '.join(map(lambda c: c.core, cores))
+            json_path = self.report_dir.joinpath('herbie.json')
+
             with Popen(
                 args=[
-                'racket', str(self.herbie_path),
-                '--platform', platform,
-                '--seed', str(self.seed)
-            ],
+                    'racket', str(self.herbie_path),
+                    '--platform', platform,
+                    '--seed', str(self.seed)
+                ],
                 stdin=PIPE,
                 stdout=PIPE,
                 universal_newlines=True) as server:
 
                 # call out to server
-                core_strs = ' '.join(map(lambda c: c.core, cores))
                 print(f'(improve ({core_strs}) {threads} {self.report_dir}) (exit)', file=server.stdin, flush=True)
-                _ = server.stdout.read()
+                retcode = server.wait()
+
+                # AVX sometimes segfaults on seed 1
+                if platform == 'avx' and self.seed == 1 and retcode == -11:
+                    self.log(f'WARN: failed to generate FPCores with Herbie, conditions met to exit without issue')
+                    return []
 
             # if everything went well, Herbie should have created a datafile
-            json_path = self.report_dir.joinpath('herbie.json')
             impl_cores = self.load_json(json_path)
             for core in impl_cores:
                 core.key = name_to_key[core.name]

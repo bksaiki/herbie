@@ -22,14 +22,20 @@ else
   OUT_DIR="$(realpath $1)"; shift
 fi
 
-# check for multi-threading
+# check for multithreading
 if [ -z "$THREADS" ]; then
   echo "Running with a single-thread"
   THREADS=1
-  HERBIE_THREADS=1
 else
   echo "Running with $THREADS threads"
+fi
+
+# set Herbie multithreading
+if [ -z "$HERBIE_THREADS" ]; then
+  echo "Running Herbie with $THREADS threads (inherited)"
   HERBIE_THREADS=$THREADS
+else
+  echo "Running Herbie with $HERBIE_THREADS threads"
 fi
 
 # advise user of execution plan
