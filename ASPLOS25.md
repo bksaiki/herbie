@@ -89,7 +89,7 @@ We recommend at least Julia 1.10.
 
 ### CMake
 
-We require CMake to build the libvdt library.
+We require CMake to build the `libvdt` library.
 We recommend installing CMake through your default package manager.
 For example, on Ubuntu, you would run
 ```
@@ -117,13 +117,13 @@ git clone https://github.com/dpiparo/vdt
 Then, navigate to the `vdt` directory.
 If you're on an x86 machine, run
 ```
-cmake -DAVX=1 .
+cmake -DAVX=1 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
 make
 make install
 ```
 If you're on an ARM machine, run
 ```
-cmake -DNEON=1 .
+cmake -DNEON=1 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
 make
 make install
 ```
