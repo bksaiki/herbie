@@ -117,6 +117,7 @@ git clone https://github.com/dpiparo/vdt
 Then, navigate to the `vdt` directory.
 If you're on an x86 machine, run
 ```
+git clean -df
 cmake -DAVX=1 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
 make
 make install
@@ -290,17 +291,23 @@ Target | Target Description | Runtime
 Arith | [src/platforms/arith.rkt](./src/platforms/arith.rkt) | src/reprs/*.rkt
 Arith+FMA | [src/platforms/arith-fma.rkt](./src/platforms/arith-fma.rkt) | src/reprs/*.rkt
 AVX | [src/platforms/avx.rkt](./src/platforms/avx.rkt) | [avx-herbie](https://github.com/herbie-fp/avx-herbie)
-C | [src/platforms/c.rkt](./src/platforms/c.rkt) | src/reprs/*.rkt
-Python | [src/platforms/python.rkt](./src/platforms/python.rkt) | src/reprs/*.rkt
+C | [src/platforms/libm.rkt](./src/platforms/libm.rkt) | src/reprs/*.rkt
+Python | [src/platforms/python3-10.rkt](./src/platforms/python3-10.rkt) | src/reprs/*.rkt
 Julia | [src/platforms/julia.rkt](./src/platforms/julia.rkt) | src/reprs/*.rkt
 NumPy | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | src/reprs/*.rkt
-vdt | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | [vdt-herbie](https://github.com/herbie-fp/vdt-herbie)
-fdlibm | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | [fdlibm-herbie](https://github.com/herbie-fp/fdlibm)
+vdt | [src/platforms/vdt.rkt](./src/platforms/vdt.rkt) | [vdt-herbie](https://github.com/herbie-fp/vdt-herbie)
+fdlibm | [src/platforms/fdlibm.rkt](./src/platforms/fdlibm.rkt) | [fdlibm-herbie](https://github.com/herbie-fp/fdlibm)
 
 **NOTE**: the target descriptions do _not_ match the examples in Figure 3,
   but they provide the same functionality.
 Later versions of Chassis implement syntax macros
   that look similar to Figure 3.
+
+The auto-tuned cost models (all but AVX) are based on timing data
+  from the machine we used for our evaluation.
+The numbers from AVX are from
+  Agner Fog's [table](https://agner.org/optimize/instruction_tables.pdf)
+  of instruction latencies for popular architecture.
 
 ### 2. Comparing to Chassis and Herbie
 
@@ -412,3 +419,81 @@ To demonstrate this variance,
 | Ubuntu 24.04.1 LTS | Intel Ultra 7 155H | 16 | ![Figure 9](infra/figures/config-3/baseline-pareto2.png) |
 
 ## Auto-Tuning Cost Models
+
+While we do not encourage changing the cost models for each target,
+  we provide the instructions for re-tuning the cost models.
+To run the auto-tuner,
+  run the following command:
+```bash
+python3 infra/platforms/tune.py --num-points <n> --num-runs <k> <target> <output_dir>
+```
+  where `n` is the number of points used
+  for evaluating each "instruction" in the target,
+  `k` is the total number of repeated evaluations
+  which the times are averaged over,
+  `target` is the name of the target we are tuning,
+  and `output_dir` is a path to a directory which
+  temporary files are written to.
+We recommend sampling over `n=100000` points
+  (this may take a long time for some targets),
+  and averaging over `k=30` runs.
+Below is the table of targets
+  and their names that are recognized
+  by the auto-tuning tool.
+
+Target | Name
+--|--
+Arith | arith
+Arith+FMA | arith-fma
+C | c
+Python | python
+Julia | julia
+NumPy | numpy
+vdt | vdt
+fdlibm | fdlibm
+
+For each of the targets
+  with an auto-tuned cost model,
+  run the command with the correct parameters.
+The result should print something like
+```
+op | time (ms)
+baseline: <num>
+[<name> <num>]
+...
+```
+Save this output in a temporary file / buffer.
+
+First,
+  copy the block containing every `[<name> <num>]` entry,
+  and navigate to the corresponding target description
+  in this repository (see the table in _1. Implementing Targets_
+  of this section).
+Each of these target descriptions should contain a block of code
+```
+(define cost-model
+  (cost-map
+    [<name> <num>]
+    ...
+))
+```
+For example,
+  in the C target description,
+  this begins at line 32 of `src/platforms/libm.rkt`.
+Replace the table with the table in your copy buffer.
+
+Next,
+  copy the single time from the line
+  in the auto-tuning output that looks like
+  `baseline: <num>`.
+Navigate back to the corresponding target description.
+There is a line in the file either of the form
+```
+(define fl-move-cost <num>)
+```
+or
+```
+(define move-cost <num>)
+```
+Replace `<num>` with the value
+  in your copy buffer.

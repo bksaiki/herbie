@@ -28,7 +28,7 @@ def main():
     parser = argparse.ArgumentParser(description='Herbie cost tuner')
     parser.add_argument('--threads', help='number of threads for compilation [1 by default]', type=int)
     parser.add_argument('--num-points', help='number of input points to evalaute on [10_000 by default]', type=int)
-    parser.add_argument('--num-runs', help='number of times to run drivers to obtain an average [100 by default]', type=int)
+    parser.add_argument('--num-runs', help='number of times to run drivers to obtain an average [10 by default]', type=int)
     parser.add_argument('--py-sample', help='uses a Python based sampling method. Useful for debugging', action='store_const', const=True, default=False)
     parser.add_argument('--key', help='unique identifier under which to place plots and other output', type=str)
     parser.add_argument('--seed', help='random seed to use for Herbie', type=int)
