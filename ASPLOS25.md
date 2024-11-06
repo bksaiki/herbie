@@ -124,6 +124,7 @@ make install
 ```
 If you're on an ARM machine, run
 ```
+git clean -df
 cmake -DNEON=1 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
 make
 make install
