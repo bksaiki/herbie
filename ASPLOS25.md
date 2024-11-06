@@ -278,7 +278,29 @@ The goal of this section is to check
   that Chassis implements the 9 targets
   described in the table in Figure 6.
 
+The following is a table listing each target,
+  the path to the target description in this repository,
+  and the path(s)
+  this repository and path(s) 
+All paths are relative to the
+  top-level directory of this repository.
 
+Target | Target Description | Runtime
+--|--|--
+Arith | [src/platforms/arith.rkt](./src/platforms/arith.rkt) | src/reprs/*.rkt
+Arith+FMA | [src/platforms/arith-fma.rkt](./src/platforms/arith-fma.rkt) | src/reprs/*.rkt
+AVX | [src/platforms/avx.rkt](./src/platforms/avx.rkt) | [avx-herbie](https://github.com/herbie-fp/avx-herbie)
+C | [src/platforms/c.rkt](./src/platforms/c.rkt) | src/reprs/*.rkt
+Python | [src/platforms/python.rkt](./src/platforms/python.rkt) | src/reprs/*.rkt
+Julia | [src/platforms/julia.rkt](./src/platforms/julia.rkt) | src/reprs/*.rkt
+NumPy | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | src/reprs/*.rkt
+vdt | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | [vdt-herbie](https://github.com/herbie-fp/vdt-herbie)
+fdlibm | [src/platforms/numpy.rkt](./src/platforms/numpy.rkt) | [fdlibm-herbie](https://github.com/herbie-fp/fdlibm)
+
+**NOTE**: the target descriptions do _not_ match the examples in Figure 3,
+  but they provide the same functionality.
+Later versions of Chassis implement syntax macros
+  that look similar to Figure 3.
 
 ### 2. Comparing to Chassis and Herbie
 
