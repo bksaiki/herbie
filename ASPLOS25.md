@@ -211,6 +211,8 @@ If any of the commands above failed unexpectedly,
 If your system is running on ARM,
   set the environment variable `NO_AVX` before
   running the subsequent command.
+This disables the AVX platform;
+  Figures 8 and 9 will be missing the AVX subplot.
 ```
 export NO_AVX=1
 ```
@@ -329,6 +331,8 @@ We provide instructions on how to run
 If your system is running on ARM,
   set the environment variable `NO_AVX` before
   continuing with the rest of this section!
+This disables the AVX platform;
+  Figures 8 and 9 will be missing the AVX subplot.
 ```
 export NO_AVX=1
 ```
