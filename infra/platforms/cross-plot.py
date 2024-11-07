@@ -538,12 +538,12 @@ def plot_subsuite(output_dir: Path, report):
 
                             for core in supported_cores:
                                 if core['time'] is None or core['err'] is None:
-                                    print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
+                                    # print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
                                     supported_cores.remove(core)
 
                             for core in desugared_cores:
                                 if core['time'] is None:
-                                    print(f'DESUGARED: missing data {core['name']}: {core['time']}')
+                                    # print(f'DESUGARED: missing data {core['name']}: {core['time']}')
                                     core['time'] = input_core['time']
                                     desugared_cores.remove(core)
 
@@ -599,12 +599,12 @@ def main():
 
                                     for core in supported_cores:
                                         if core['time'] is None or core['err'] is None:
-                                            print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
+                                            # print(f'SUPPORTED: missing data {core['name']}: {core['time']}')
                                             supported_cores.remove(core)
 
                                     for core in desugared_cores:
                                         if core['time'] is None:
-                                            print(f'DESUGARED: missing data {core['name']}: {core['time']}')
+                                            # print(f'DESUGARED: missing data {core['name']}: {core['time']}')
                                             core['time'] = input_core['time']
                                             desugared_cores.remove(core)
 
