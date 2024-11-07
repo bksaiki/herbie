@@ -115,17 +115,22 @@ To install, clone the [repo](https://github.com/dpiparo/vdt):
 git clone https://github.com/dpiparo/vdt
 ```
 Then, navigate to the `vdt` directory.
+
+**NOTE** For Clang >=18, please add `-DUSERFLAGS='-Wno-nan-infinity-disabled'`
+  to the following `cmake` command since `vdt` exploits undefined behavior
+  that later versions of Clang now disallow (or at least warn).
+
 If you're on an x86 machine, run
 ```
 git clean -df
-cmake -DAVX=1 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
+cmake -DAVX=1 .
 make
 make install
 ```
 If you're on an ARM machine, run
 ```
 git clean -df
-cmake -DSSE=0 -DNEON=0 -DUSERFLAGS='-Wno-nan-infinity-disabled' .
+cmake -DSSE=0 -DNEON=0 .
 make
 make install
 ```
