@@ -195,6 +195,18 @@ If libvdt is not installed, `clang` will print a different error instead.
 /usr/bin/ld: cannot find -lvdt: No such file or directory
 ```
 
+**IMPORTANT**:
+If your system is running on ARM,
+  set the environment variable `NO_AVX` before
+  running the subsequent command.
+This disables the AVX target, during this evaluation.
+Figures that are displayed per-target
+  will be _missing_ the AVX target subplot
+  (specifically Figures 8 and 9).
+```
+export NO_AVX=1
+```
+
 To test that Herbie works, run
 ```
 racket src/herbie.rkt shell

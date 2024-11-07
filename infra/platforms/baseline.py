@@ -20,7 +20,9 @@ default_num_threads = 1
 default_start_seed = 1
 
 def install_herbie(install_dir: Path):
-    subprocess.run(['raco', 'pkg', 'remove', '--force', 'avx-herbie', 'fdlibm-herbie', 'vdt-herbie'])
+    subprocess.run(['raco', 'pkg', 'remove', '--force', 'avx-herbie'])
+    subprocess.run(['raco', 'pkg', 'remove', '--force', 'fdlibm-herbie'])
+    subprocess.run(['raco', 'pkg', 'remove', '--force', 'vdt-herbie'])
     subprocess.run(['git', 'clone', '--branch', 'v2.0.2', 'https://github.com/herbie-fp/herbie', install_dir])
     subprocess.run(['make', 'install'], cwd=install_dir)
 
@@ -59,9 +61,12 @@ def run_herbie(
     shutil.rmtree(report_dir)
 
 
-def reinstall_herbie():
+def reinstall_herbie(no_avx: bool):
     subprocess.run(['make', 'install'], cwd=herbie_dir)
-    subprocess.run(['raco', 'pkg', 'install', 'avx-herbie', 'fdlibm-herbie', 'vdt-herbie'])
+    if no_avx:
+        subprocess.run(['raco', 'pkg', 'install', 'fdlibm-herbie', 'vdt-herbie'])
+    else:
+        subprocess.run(['raco', 'pkg', 'install', 'avx-herbie', 'fdlibm-herbie', 'vdt-herbie'])
 
 def main():
     parser = argparse.ArgumentParser(description='Herbie baseline eval')
@@ -72,6 +77,7 @@ def main():
     parser.add_argument('--parallel', help='maximum number of parallel runs [default: 1]', type=int)
     parser.add_argument('--threads', help='maximum number of threads [default: 1]', type=int)
     parser.add_argument('--start-seed', help='first seed to run (sequentially) [default: 1]', type=int)
+    parser.add_argument('--no-avx', help='disable the AVX configuration', action='store_true')
     args = parser.parse_args()
 
     # extract command line arguments
@@ -82,6 +88,7 @@ def main():
     num_parallel: int = args.parallel or default_num_parallel
     num_threads: int = args.threads or default_num_threads
     start_seed: int = args.start_seed or default_start_seed
+    no_avx: bool = args.no_avx
 
     # Install directory
     install_dir = output_dir.joinpath('herbie-2.0')
@@ -105,7 +112,7 @@ def main():
             run_herbie(*config)
 
     # Reinstall local Herbie
-    reinstall_herbie()
+    reinstall_herbie(no_avx=no_avx)
 
 
 if __name__ == "__main__":

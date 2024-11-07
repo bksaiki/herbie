@@ -92,19 +92,33 @@ def run_baseline(
     num_parallel: int,
     num_threads: int,
     num_seeds: int,
-    start_seed: int
+    start_seed: int,
+    no_avx: bool
 ) -> None:
     print(f'running baseline eval')
-    subprocess.run([
-        'python3', baseline_path,
-        '--key', key,
-        '--parallel', str(num_parallel),
-        '--threads', str(num_threads),
-        '--start-seed', str(start_seed),
-        bench_path,
-        output_dir,
-        str(num_seeds)
-    ])
+    if no_avx:
+        subprocess.run([
+            'python3', baseline_path,
+            '--key', key,
+            '--parallel', str(num_parallel),
+            '--threads', str(num_threads),
+            '--start-seed', str(start_seed),
+            '--no-avx',
+            bench_path,
+            output_dir,
+            str(num_seeds)
+        ])
+    else:
+        subprocess.run([
+            'python3', baseline_path,
+            '--key', key,
+            '--parallel', str(num_parallel),
+            '--threads', str(num_threads),
+            '--start-seed', str(start_seed),
+            bench_path,
+            output_dir,
+            str(num_seeds)
+        ])
 
 
 def run_improvement(
@@ -279,7 +293,8 @@ def main():
             num_parallel=num_parallel,
             num_threads=num_herbie_threads,
             num_seeds=num_seeds,
-            start_seed=start_seed
+            start_seed=start_seed,
+            no_avx=no_avx,
         )
 
     # eval configurations

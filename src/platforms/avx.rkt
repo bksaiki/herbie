@@ -2,6 +2,8 @@
 
 (require "../plugin.rkt")
 
+(unless (getenv "NO_AVX")
+
 (define move-cost 1)
 (define single-move-cost (* move-cost 1))
 (define double-move-cost (* move-cost 1))
@@ -80,5 +82,7 @@
                                     tunable
                                     tunable-single-precision
                                     tunable-double-precision))
+
+)
 
 (module test racket/base)
