@@ -24,8 +24,11 @@
     ("rival" #:version "1.7")
     ("fpbench" #:version "2.0.3")
     "vdt-herbie"
-    "avx-herbie"
-    "fdlibm-herbie"))
+    "fdlibm-herbie"
+    ("avx-herbie" #:platform "x86_64-macosx")
+    ("avx-herbie" #:platform "win32\\x86_64")
+    ("avx-herbie" #:platform "x86_64-linux")
+    ("avx-herbie" #:platform "x86_64-linux-natipkg")))
 
 (define build-deps
   '("rackunit-lib"))
