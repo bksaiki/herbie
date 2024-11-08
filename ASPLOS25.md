@@ -93,9 +93,8 @@ We require CMake to build the `libvdt` library.
 We recommend installing CMake through your default package manager.
 For example, on Ubuntu, you would run
 ```
-apt install cmake
+apt install cmake   # may require root access
 ```
-This may require root access depending on your system.
 
 ### Clang
 
@@ -103,9 +102,8 @@ We used Clang 14 as our C/C++ compiler.
 We recommend installing Clang through your package manager.
 For example, on Ubuntu, you would run
 ```
-apt install clang
+apt install clang    # may require root access
 ```
-This may require root access depending on your system.
 
 ### libvdt
 
@@ -132,9 +130,8 @@ If you're on an ARM machine, run
 git clean -df
 cmake -DSSE=0 -DNEON=0 .
 make
-make install
+make install    # may require root access
 ```
-The final step possibly requires root access.
 
 ### Chassis
 
@@ -142,6 +139,7 @@ Ensure you have Chassis cloned from git,
   if you have not cloned it already.
 ```
 git clone https://github.com/bksaiki/herbie
+cd herbie
 git checkout asplos25-aec
 ```
 Chassis requires Racket and Rust to build.
@@ -173,6 +171,7 @@ Check that Clang is installed.
 clang -v
 ```
 Check that Python is installed with the proper libraries.
+Remember to use the virtual environment under `.env`.
 ```
 python3
 ```
@@ -186,16 +185,27 @@ Check that Julia is installed.
 julia -v
 ```
 Check that `libvdt` is installed by running `clang` with a library flag set.
+This command should result in an error
 ```
-clang -lvdt
+clang -lvdt   # should result in an error
 ```
 The command should result in an error.
 Specifically, it should complain that it could not find a `main` function.
+On Linux, this looks something like
 ```
 /usr/bin/ld: /lib/x86_64-linux-gnu/Scrt1.o: in function `_start':
 (.text+0x1b): undefined reference to `main'
 ```
-If libvdt is not installed, `clang` will print a different error instead.
+On MacOS, the looks something like
+```
+Undefined symbols for architecture x86_64:
+  "_main", referenced from:
+      <initial-undefines>
+ld: symbol(s) not found for architecture x86_64
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+```
+If libvdt is not installed, `clang` will print that it cannot
+  link against libvdt.
 ```
 /usr/bin/ld: cannot find -lvdt: No such file or directory
 ```
@@ -237,6 +247,7 @@ export NO_AVX=1
 To test if the evaluation will run end-to-end,
   you will run the evaluation on a small set
   of benchmarks.
+Ensure that your Python virtual environment is active.
 To run this small evaluation, run
 ```
 mkdir -p reports
@@ -246,6 +257,13 @@ where `n` is the number of threads you want to run the evaluation with.
 We recommend using 4 threads since some phases of
   the evaluation are memory-intensive.
 This command should take about 10 to 20 minutes.
+
+If you wish to reset this part of the evaluation,
+  delete the `reports` directory with
+```
+rm -rf reports
+```
+
 If the evaluation runs to completion,
   the `reports` directory should have the following structure:
 ```
@@ -265,7 +283,7 @@ Please check each of the plots look similar to the following plots.
 Keep in mind that there is so little data,
   the exact placement of points is not NOTE.
 
-| Figure 7 | Figure 8 | Figure 9 |
+| c-pareto.png | baseline-pareto.png | baseline-pareto2.png |
 |--|--|--|
 | ![Figure 7](./infra/figures/tutorial/c-pareto.png) | ![Figure 8](./infra/figures/tutorial/baseline-pareto.png) | ![Figure 9](./infra/figures/tutorial/baseline-pareto2.png) |
 
@@ -382,6 +400,7 @@ We provide instructions on
 
 ### Steps
 
+Ensure that your Python virtual environment is active.
 To start the evaluation,
   run either 
 ```
@@ -403,6 +422,12 @@ This will generate all the necessary figures.
 We recommend using `tmux` so that the process can be detached.
 The reduced evaluation should take 2 to 3 hours
   while the full evaluation should take about a day.
+
+If you wish to reset this part of the evaluation,
+  delete the `reports` directory with
+```
+rm -rf reports
+```
 
 If the evaluation runs to completion,
   the `reports` directory should have the following structure:
