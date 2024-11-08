@@ -9,7 +9,7 @@ In our paper, we presented Chassis,
 If you wish to evaluate the artifact,
   please start with the "Getting Started" section
   of this file.
-The evaluation takes a couple of hours to run.
+The evaluation takes a many hours to run.
 
 ## Getting Started
 
