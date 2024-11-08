@@ -145,6 +145,11 @@ git clone https://github.com/bksaiki/herbie
 git checkout asplos25-aec
 ```
 Chassis requires Racket and Rust to build.
+If you have a previous installation of Chassis or Herbie,
+  please delete all related Racket packages.
+```
+make clean
+```
 To build Chassis, run
 ```
 make install
@@ -234,6 +239,7 @@ To test if the evaluation will run end-to-end,
   of benchmarks.
 To run this small evaluation, run
 ```
+mkdir -p reports
 THREADS=<n> bash infra/platforms-eval.sh reports bench/tutorial.fpcore
 ```
 where `n` is the number of threads you want to run the evaluation with.
@@ -374,11 +380,13 @@ We provide instructions on
 
 To start the evaluation,
   run either 
-```bash
+```
+mkdir -p reports
 THREADS=<n> bash infra/platforms-eval.sh reports bench/hamming bench/mathematics
 ```
 for the reduced evaluation, or
-```bash
+```
+mkdir -p reports
 THREADS=<n> bash infra/platforms-eval.sh reports bench/*
 ```
 for the full evaluation,
